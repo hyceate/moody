@@ -1,0 +1,3 @@
+#form_pin_details li:not(:last-child):not(.tag) {
+  margin-bottom: 20px;
+}
