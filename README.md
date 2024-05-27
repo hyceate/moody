@@ -32,11 +32,10 @@ Or you can use mongoexpress at localhost:8081 to create a new database.
 
 Create .env file in the backend folder.
 
->MONGODB_ADMINUSERNAME=username  
->MONGODB_ADMINPASSWORD=password
+> MONGODB_ADMINUSERNAME=username  
+> MONGODB_ADMINPASSWORD=password
 
 This is what you will use to connect to 'moody' db.
-
 
 ---
 
