@@ -84,7 +84,6 @@ export const login = async (
     const sessionUser = {
       id: user._id,
       username: user.username,
-      // email: user.email,
     };
 
     // Serialize user to the session
@@ -130,6 +129,5 @@ export const checkAuth = (
     res.json({ user: req.session.user });
   } else {
     res.status(401).end();
-    // res.status(401).json({ message: 'Unauthorized' });
   }
 };

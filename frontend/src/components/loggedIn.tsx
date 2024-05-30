@@ -9,41 +9,11 @@ import {
   MenuDivider,
 } from '@chakra-ui/react';
 import { handleLogOut } from '../actions/auth';
-import { $user } from '../context/userStore';
-import { useStore } from '@nanostores/react';
-import request from 'graphql-request';
-import { useQuery } from '@tanstack/react-query';
-
-interface User {
-  username: string;
-}
+import { useAuth } from '../context/authContext';
 export const LoggedIn = () => {
-  const user = useStore($user);
-  const userId = user.id && typeof user.id === 'string' ? user.id : '';
-  const fetchUsername = `
-    query username($id: ID!){
-      user(id: $id) {
-        username
-      }
-    }`;
+  const { user } = useAuth();
+  const username = user?.username;
 
-  const userData = useQuery<User>({
-    queryKey: ['user', userId],
-    queryFn: async () => {
-      try {
-        const endpoint = 'http://localhost:3000/api/graphql';
-        const response: { user: User } = await request(
-          endpoint,
-          fetchUsername,
-          { id: userId },
-        );
-        return response.user;
-      } catch (error) {
-        throw new Error(`Error fetching user: ${error}`);
-      }
-    },
-  });
-  const username = userData.data?.username;
   return (
     <ul id="loggedIn" className="flex justify-end gap-5 items-center ml-3">
       <li className="mx-1">
@@ -55,7 +25,7 @@ export const LoggedIn = () => {
       </li>
       <li className="flex items-center justify-center gap-1">
         <Link to={`/profile/${username}`} className="flex items-center">
-          <Avatar boxSize={8}></Avatar>
+          <Avatar name={`${username}`} boxSize={8}></Avatar>
         </Link>
         <Menu isLazy>
           {({ isOpen }) => (

@@ -1,10 +1,10 @@
 # Moody
 
-### a pinterest clone learning project
+### a basic pinterest-like project for self-education
 
 ---
 
-Built with MERN stack - create app with vite + swc, Graphql-Yoga, graphql-request, TanStack Query, Tailwindcss, Chakra-Ui, Generouted, masonic, nanostore + persistent atoms, axios
+Built with MERN stack - create app with vite + swc, Graphql-Yoga, graphql-request, TanStack Query, Tailwindcss, Chakra-Ui, Formik, Generouted, gestalt, nanostore + persistent atoms, axios
 
 ---
 

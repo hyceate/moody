@@ -79,7 +79,7 @@ export default function SingleBoard() {
   }
   return (
     <>
-      <div className="flex flex-col w-full justify-center items-center mb-20">
+      <div className="flex flex-col w-full justify-center items-center mb-10 mt-5">
         <section className="flex flex-col w-full justify-center items-center mb-2">
           <h1 className="mt-2 text-3xl font-bold">{title}</h1>
           <h2>{boardData[0].pinCount} pins</h2>

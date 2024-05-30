@@ -7,7 +7,7 @@ export default function App() {
   return (
     <>
       <Header />
-      <main className="flex flex-col items-center justify-center w-full p-5">
+      <main className="flex flex-col items-center justify-center w-full">
         <Outlet />
       </main>
     </>

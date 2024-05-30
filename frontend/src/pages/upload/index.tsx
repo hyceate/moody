@@ -11,15 +11,17 @@ import {
 } from '@chakra-ui/react';
 import { ArrowUpIcon, SmallCloseIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { request } from 'graphql-request';
 import axios from 'axios';
-import { useStore } from '@nanostores/react';
-import { $user } from '../../context/userStore';
+import request from 'graphql-request';
+import { fetchData } from '../../query/fetch';
 import './upload.css';
+import { useAuth } from '../../context/authContext';
+import { Navigate } from 'react-router-dom';
 // component start
 export default function Upload() {
-  const user = useStore($user);
-  const userId = user.id && typeof user.id === 'string' ? user.id : '';
+  const { isAuthenticated, user } = useAuth();
+  const userId = user?.id;
+  const username = user?.username;
   const [pinDetails, setPinDetails] = useState({
     user: userId,
     board: '',
@@ -64,26 +66,13 @@ export default function Upload() {
     id: string;
     title: string;
   }
-  interface ResponseData {
-    boardsByUser: Board[];
-  }
+  const endpoint = 'http://localhost:3000/api/graphql';
   const { data, refetch } = useQuery({
-    queryKey: ['boards', fetchBoardsForForm, userId],
-    queryFn: async () => {
-      try {
-        const endpoint = 'http://localhost:3000/api/graphql';
-        const response: ResponseData = await request(
-          endpoint,
-          fetchBoardsForForm,
-          {
-            userId,
-          },
-        );
-        return response.boardsByUser;
-      } catch (error) {
-        throw new Error(`Error fetching boards: ${error}`);
-      }
-    },
+    queryKey: ['boards', fetchBoardsForForm, userId, endpoint],
+    queryFn: () =>
+      fetchData<{ boardsByUser: Board[] }>(endpoint, fetchBoardsForForm, {
+        userId,
+      }).then((data) => data.boardsByUser),
     enabled: false, // Do not fetch on mount
   });
   const uploadImage = async (file: any, userId: any) => {
@@ -216,6 +205,20 @@ export default function Upload() {
     document.title = 'Upload a Pin to moody.';
   }, [hasFetched, refetch]);
   console.log(pinDetails);
+  if (!isAuthenticated)
+    return (
+      <>
+        <div className="flex flex-col justify-center items-center min-h-full w-full">
+          <div className="flex-auto h-full p-12 max-w-[50rem]">
+            <p className="text-3xl text-center">
+              You&rsquo;re not logged in! You must have an account to upload a
+              pin to moody.
+            </p>
+          </div>
+        </div>
+        <Navigate to="#login" replace />
+      </>
+    );
   return (
     <>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
@@ -333,12 +336,7 @@ export default function Upload() {
                     }
                   ></Input>
                 </li>
-                <li className="userSection">
-                  <div className="py-2 flex items-center gap-2">
-                    <Avatar />
-                    <h4 className="">&lt; Username will go here &gt;</h4>
-                  </div>
-                </li>
+
                 <li>
                   <FormLabel htmlFor="description">Description</FormLabel>
                   <Textarea
@@ -356,6 +354,12 @@ export default function Upload() {
                       })
                     }
                   ></Textarea>
+                </li>
+                <li className="userSection">
+                  <div className="py-2 flex items-center gap-2">
+                    <Avatar name={`${username}`} boxSize="50px"></Avatar>
+                    <h4 className="">{username}</h4>
+                  </div>
                 </li>
                 <li>
                   <FormLabel htmlFor="link">Link</FormLabel>

@@ -1,18 +1,28 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import request from 'graphql-request';
-import { Tab, Tabs, TabList, TabPanels, TabPanel } from '@chakra-ui/react';
+import {
+  Tab,
+  Tabs,
+  TabList,
+  TabPanels,
+  TabPanel,
+  Button,
+} from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
-import { Masonry } from 'masonic';
+import { Masonry, Flex, Box, Image as Img } from 'gestalt';
 import { Link } from 'react-router-dom';
 import { ProfileHead } from '../../components/profilehead';
 import { useAuth } from '../../context/authContext';
+import { fetchData } from '../../query/fetch';
+import { getImageDimensions } from '../../actions/images';
+
 interface User {
   id: string;
   username: string;
 }
 interface Pin {
+  dimensions: { width: number; height: number };
   slice: any;
   id: string;
   title: string;
@@ -66,68 +76,70 @@ const fetchUserPins = `
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
+  const [pins, setPins] = useState<Pin[]>([]);
+  const [showPins, setShowPins] = useState(false);
+  const scrollContainerRef = useRef<HTMLElement | Window | null>(null);
+  const initialLoad = useRef(true);
 
   const handleTabChange = (tabName: string) => {
     if (tabName === 'created') {
       window.location.hash = '#created'; // Set hash for created tab
     } else {
-      window.location.hash = ''; // Clear hash for boards tab
+      window.location.hash = '#'; // Clear hash for boards tab
     }
   };
   const endpoint = 'http://localhost:3000/api/graphql';
   const userData = useQuery<User>({
-    queryKey: ['user', username],
-    queryFn: async () => {
-      try {
-        const response: { userByName: User } = await request(
-          endpoint,
-          fetchUserData,
-          { name: username },
-        );
-        // console.log(response.userByName);
-        return response.userByName;
-      } catch (error) {
-        throw new Error(`Error fetching boards: ${error}`);
-      }
-    },
+    queryKey: ['user', username, endpoint],
+    queryFn: () =>
+      fetchData<{ userByName: User }>(endpoint, fetchUserData, {
+        name: username,
+      }).then((data) => data.userByName),
     enabled: !!username,
   });
+
   const boardData = useQuery<Board[]>({
-    queryKey: ['boards', username],
-    queryFn: async () => {
-      try {
-        const response: { boardsByUser: Board[] } = await request(
-          endpoint,
-          fetchUserBoards,
-          { user_Id: userData.data?.id },
-        );
-        // console.log(response.boardsByUser);
-        return response.boardsByUser;
-      } catch (error) {
-        throw new Error(`Error fetching boards: ${error}`);
-      }
-    },
+    queryKey: ['boards', username, endpoint, userData.data?.id],
+    queryFn: () =>
+      fetchData<{ boardsByUser: Board[] }>(endpoint, fetchUserBoards, {
+        user_Id: userData.data?.id,
+      }).then((data) => data.boardsByUser),
     enabled: !!username && userData.isSuccess,
   });
   const pinsData = useQuery<Pin[]>({
-    queryKey: ['pins', username],
-    queryFn: async () => {
-      try {
-        const response: { pinsByUser: Pin[] } = await request(
-          endpoint,
-          fetchUserPins,
-          { id: userData.data?.id },
-        );
-        // console.log(response.pinsByUser);
-        return response.pinsByUser;
-      } catch (error) {
-        throw new Error(`Error fetching pins: ${error}`);
-      }
-    },
+    queryKey: ['pins', username, endpoint, userData.data?.id],
+    queryFn: () =>
+      fetchData<{ pinsByUser: Pin[] }>(endpoint, fetchUserPins, {
+        id: userData.data?.id,
+      }).then((data) => data.pinsByUser),
     enabled: !!username && userData.isSuccess,
   });
+  const BASE_URL = window.location.origin;
+  useEffect(() => {
+    if (pinsData.data && initialLoad.current) {
+      setPins(pinsData.data);
+      const fetchDimensions = async () => {
+        try {
+          const pinsWithDimensions = await Promise.all(
+            pinsData.data.map(async (pin) => {
+              const fullImageUrl = `${BASE_URL}${pin.imgPath}`;
+              const dimensions = await getImageDimensions(fullImageUrl);
+              return {
+                ...pin,
+                dimensions: dimensions as { width: number; height: number },
+              };
+            }),
+          );
+          setPins(pinsWithDimensions);
+          setShowPins(true);
+        } catch (error) {
+          console.error('Error fetching image dimensions:', error);
+        }
+      };
+      fetchDimensions();
+    }
+  }, [BASE_URL, pinsData.data]);
   useEffect(() => {
     document.title = `${username}'s Profile`;
   }, [username]);
@@ -144,9 +156,13 @@ export default function Profile() {
       id="profile"
       className="flex flex-col gap-10 w-full max-w-[72rem] items-center"
     >
-      <section className="flex flex-col items-center gap-2">
+      <section className="flex flex-col items-center gap-2 mt-5">
         <ProfileHead username={username} />
-        <div>edit profile maybe</div>
+        {isAuthenticated && (
+          <Button>
+            <Link to="/settings">Edit Profile</Link>
+          </Button>
+        )}
       </section>
       <Tabs
         isLazy
@@ -174,46 +190,15 @@ export default function Profile() {
           <TabPanel>
             {pinsData.data && pinsData.data.length > 0 ? (
               <Masonry
-                items={pinsData.data}
-                columnGutter={12}
-                rowGutter={15}
-                columnWidth={160}
-                maxColumnCount={5}
-                overscanBy={2}
-                render={({ data: pin }: { data: Pin }) => (
-                  <div
-                    key={pin.id}
-                    className={`rounded-[1rem] w-full overflow-hidden fadeIn ${!pinsData.isLoading ? 'loaded' : ''}`}
-                  >
-                    <Link to={`/pin/${pin.id}`}>
-                      <img
-                        key={pin.id}
-                        src={pin.imgPath}
-                        alt={pin.title || pin.description || 'Image'}
-                        className="rounded-[1rem] border-2 border-solid border-slate-50"
-                      />
-                    </Link>
-                    <section className="flex flex-col px-1 pt-2 gap-[2px]">
-                      {pin.title && (
-                        <Link to={`/pin/${pin.id}`}>
-                          <h1 className="font-semibold hover:text-[#76abae]">
-                            {pin.title}
-                          </h1>
-                        </Link>
-                      )}
-                    </section>
-                  </div>
+                columnWidth={220}
+                gutterWidth={20}
+                items={pins}
+                layout="flexible"
+                minCols={1}
+                renderItem={({ data }) => (
+                  <GridComponent data={data} showPins={showPins} />
                 )}
-                onRender={() => {
-                  if (!pinsData.isLoading && pinsData.data) {
-                    document.querySelectorAll('.fadeIn').forEach((element) => {
-                      element.classList.remove('loaded'); // Remove the class first to reset the state
-                      setTimeout(() => {
-                        element.classList.add('loaded'); // Add the class back to trigger the animation
-                      }, 0);
-                    });
-                  }
-                }}
+                scrollContainer={() => scrollContainerRef.current || window}
               />
             ) : (
               <div className="flex w-full justify-center items-center">
@@ -276,5 +261,30 @@ export default function Profile() {
         </TabPanels>
       </Tabs>
     </div>
+  );
+}
+
+function GridComponent({ data, showPins }: { data: Pin; showPins: boolean }) {
+  return (
+    <Box rounding={8} marginBottom={3}>
+      <Flex direction="column">
+        <Flex.Item dataTestId={data.id}>
+          <div key={data.id} className={`fadeIn ${showPins ? 'loaded' : ''}`}>
+            <Link to={`/pin/${data.id}`}>
+              {data.dimensions && (
+                <Box rounding={5} overflow="hidden">
+                  <Img
+                    src={data.imgPath}
+                    alt={data.title || data.description || 'Image'}
+                    naturalWidth={data.dimensions?.width}
+                    naturalHeight={data.dimensions?.height}
+                  />
+                </Box>
+              )}
+            </Link>
+          </div>
+        </Flex.Item>
+      </Flex>
+    </Box>
   );
 }

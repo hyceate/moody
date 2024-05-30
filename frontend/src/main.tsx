@@ -8,7 +8,8 @@ import { AuthProvider } from './context/authContext';
 import './index.css';
 
 const queryClient = new QueryClient();
-
+const html = document.querySelector('html');
+html?.setAttribute('dir', 'ltr');
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>

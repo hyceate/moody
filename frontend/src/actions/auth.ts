@@ -49,7 +49,7 @@ export const handleLogIn = async (
       if (response.status === 200) {
         const userData = response.data.user;
         setSubmitting(false);
-        console.log(userData);
+        // console.log(userData);
         $user.setKey('id', userData.id);
         window.location.href = '/';
       } else if (response.status === 401) {
@@ -97,19 +97,22 @@ export const handleLogOut = async () => {
     return false;
   }
 };
-export const checkAuth = async (): Promise<boolean> => {
+interface UserData {
+  user: any;
+  id: string;
+  username: string;
+}
+export const checkAuth = async (): Promise<UserData | null> => {
   try {
     const response = await axios.get('http://localhost:3000/api/auth/user', {
       withCredentials: true,
       timeout: 5000,
     });
-    // console.log(response);
     if (response && response.status === 200) {
-      // console.log('authenticated');
-      return true;
+      return response.data;
     }
   } catch (error) {
-    // console.error('Error during authentication check', error);
+    return null;
   }
-  return false;
+  return null;
 };

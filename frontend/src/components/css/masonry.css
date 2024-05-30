@@ -1,0 +1,5 @@
+@import "gestalt/dist/gestalt.css";
+
+.block {
+  transition: all 1s ease-in-out;
+}
