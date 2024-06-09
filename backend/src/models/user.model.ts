@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 import { Board } from './board.model';
 import bcrypt from 'bcryptjs';
 
@@ -40,7 +40,7 @@ const userSchema: Schema<User> = new Schema(
 
 userSchema.pre('save', async function (next) {
   // this refers to user object being saved
-  if (!this.isModified('password')) return next(); // skip hashing if password is not modified
+  if (!this.isModified('password')) return next();
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(this.password, salt);

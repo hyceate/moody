@@ -1,12 +1,14 @@
 import request from 'graphql-request';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Avatar, Skeleton } from '@chakra-ui/react';
-import { Masonry, Flex, Box, Image as Img } from 'gestalt';
-import { getImageDimensions } from '../actions/images';
-import './css/masonry.css';
+import { fetchPinsSchema } from 'query/queries';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Box, Masonry } from 'gestalt';
+import { GridComponentWithUser } from 'components/gridItem';
+import { getImageDimensions } from 'actions/images';
+import { restoreScroll } from '@/actions/scroll';
+import './css/gestalt.css';
 import './css/transitions.css';
+import { Spinner } from '@chakra-ui/react';
 interface User {
   id: string;
   username: string;
@@ -22,21 +24,6 @@ interface Pins {
 interface PinsResponse {
   pins: Pins[];
 }
-
-const fetchPinsSchema = `
-  query GetPins {
-    pins {
-      id
-      title
-      description
-      imgPath
-      user {
-        username
-        id
-      }
-    }
-  }
-`;
 
 const AllPins = () => {
   const [pins, setPins] = useState<Pins[]>([]);
@@ -58,8 +45,12 @@ const AllPins = () => {
     },
   });
 
-  const BASE_URL = window.location.origin;
   useEffect(() => {
+    restoreScroll();
+  }, []);
+
+  const BASE_URL = window.location.origin;
+  useLayoutEffect(() => {
     if (data && initialLoad.current) {
       setPins(data);
       const fetchDimensions = async () => {
@@ -75,111 +66,54 @@ const AllPins = () => {
             }),
           );
           setPins(pinsWithDimensions);
-          setShowPins(true);
         } catch (error) {
           console.error('Error fetching image dimensions:', error);
         }
       };
       fetchDimensions();
-    }
-    if (!isLoading && data) {
-      document.querySelectorAll('.fadeIn').forEach((element) => {
-        element.classList.remove('loaded');
-        setTimeout(() => {
-          element.classList.add('loaded');
-        }, 0);
-      });
+      setShowPins(true);
     }
   }, [BASE_URL, data, isLoading]);
 
+  if (error) return <div>Error: {error.message}</div>;
   if (isLoading)
     return (
       <div
         id="index-pins"
-        className="w-full h-full flex justify-center items-center"
+        className="flex w-full h-full justify-center items-center"
       >
-        <Skeleton height="700px" />
-        <Skeleton height="300px" />
-        <Skeleton height="400px" />
-        <Skeleton height="700px" />
-        <Skeleton height="300px" />
-        <Skeleton height="400px" />
-        <Skeleton height="700px" />
-        <Skeleton height="300px" />
-        <Skeleton height="400px" />
-        Loading...
+        <div className="flex-1 flex h-[80dvh] justify-center items-center">
+          <Spinner boxSize={200}></Spinner>
+        </div>
       </div>
     );
-  if (error) return <div>Error: {error.message}</div>;
-
   return (
     <div
       id="index-pins"
-      className="h-full w-full px-[9rem] max-lg:px-0 py-[2rem]"
+      className="h-full w-full px-[5rem] max-lg:px-0 pt-[2rem] pb-10"
       ref={(el) => {
         scrollContainerRef.current = el;
       }}
       tabIndex={0}
     >
-      {data && data.length > 0 && scrollContainerRef.current && (
-        <Masonry
-          columnWidth={220}
-          gutterWidth={20}
-          items={pins}
-          layout="flexible"
-          minCols={1}
-          renderItem={({ data }) => (
-            <GridComponent data={data} showPins={showPins} />
-          )}
-          scrollContainer={() => scrollContainerRef.current || window}
-        />
-      )}
+      <Box>
+        {data && data.length > 0 && scrollContainerRef.current && (
+          <Masonry
+            columnWidth={230}
+            gutterWidth={20}
+            items={pins}
+            layout="flexible"
+            minCols={2}
+            renderItem={({ data }) => (
+              <GridComponentWithUser data={data} showPins={showPins} />
+            )}
+            scrollContainer={() => scrollContainerRef.current || window}
+          />
+        )}
+      </Box>
       {data && data.length === 0 && <div>No pins available</div>}
     </div>
   );
 };
 
 export default AllPins;
-
-function GridComponent({ data, showPins }: { data: Pins; showPins: boolean }) {
-  return (
-    <Box rounding={8} marginBottom={3}>
-      <Flex direction="column">
-        <Flex.Item dataTestId={data.id}>
-          <div key={data.id} className={`fadeIn ${showPins ? 'loaded' : ''}`}>
-            <Link to={`/pin/${data.id}`}>
-              {data.dimensions && (
-                <Box rounding={5} overflow="hidden">
-                  <Img
-                    src={data.imgPath}
-                    alt={data.title || data.description || 'Image'}
-                    naturalWidth={data.dimensions?.width}
-                    naturalHeight={data.dimensions?.height}
-                  />
-                </Box>
-              )}
-            </Link>
-            <section className="flex flex-col px-1 pt-2 gap-[2px]">
-              {data.title ? (
-                <>
-                  <Link to={`/pin/${data.id}`}>
-                    <h1 className="font-semibold hover:text-[#76abae]">
-                      {data.title}
-                    </h1>
-                  </Link>
-                </>
-              ) : null}
-              <Link
-                to={`/profile/${data.user.username}`}
-                className="flex flex-row items-center gap-2 hover:underline"
-              >
-                <Avatar boxSize={7}></Avatar>
-                <h2 className="text-[0.8rem]">{data.user.username}</h2>
-              </Link>
-            </section>
-          </div>
-        </Flex.Item>
-      </Flex>
-    </Box>
-  );
-}

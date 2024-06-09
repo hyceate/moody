@@ -25,7 +25,7 @@ export const LoggedIn = () => {
       </li>
       <li className="flex items-center justify-center gap-1">
         <Link to={`/profile/${username}`} className="flex items-center">
-          <Avatar name={`${username}`} boxSize={8}></Avatar>
+          <Avatar boxSize={8}></Avatar>
         </Link>
         <Menu isLazy>
           {({ isOpen }) => (

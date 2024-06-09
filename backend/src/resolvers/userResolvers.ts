@@ -1,11 +1,28 @@
 import { User } from '../models/user.model';
 import { Board } from '../models/board.model';
 import { Pin } from '../models/pin.model';
+import bcrypt from 'bcryptjs';
 import { validateEmail, validateLength } from '../functions/validate';
+import { Request, Response } from 'express';
 interface SignUpInput {
   username: string;
   email: string;
   password: string;
+}
+interface UpdateInput {
+  id: string;
+  username: string;
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+export interface CustomSessionData {
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+  };
 }
 export const userResolvers = {
   Query: {
@@ -41,7 +58,7 @@ export const userResolvers = {
         if (!validateEmail(email) || !validateLength(password)) {
           throw new Error('Invalid email or password.');
         }
-        // Check if user with given username or email already exists
+
         const existingUserByUsername = await User.findOne({ username });
         const existingUserByEmail = await User.findOne({ email });
         if (existingUserByUsername && existingUserByEmail) {
@@ -71,10 +88,87 @@ export const userResolvers = {
           password,
         });
         return { success: true, user: newUser };
-      } catch (error: unknown) {
+      } catch (error) {
         return {
           success: false,
           message: 'Signup failed: An unknown error occurred.',
+        };
+      }
+    },
+    updateAccount: async (
+      _: any,
+      { input }: { input: UpdateInput },
+      context: any,
+    ) => {
+      try {
+        const {
+          id,
+          username,
+          email,
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        } = input;
+
+        const user = await User.findById(id);
+        if (!user) {
+          return {
+            success: false,
+            message: 'User not found',
+            errorType: 'incorrectUser',
+          };
+        }
+        const isPasswordValid = await user.comparePassword(currentPassword);
+        if (!isPasswordValid) {
+          return {
+            success: false,
+            message: 'Password Incorrect',
+            errorType: 'incorrectPassword',
+          };
+        }
+        user.username =
+          username && username !== user.username ? username : user.username;
+        user.email = email && email !== user.email ? email : user.email;
+
+        if (newPassword && confirmPassword) {
+          if (newPassword !== confirmPassword) {
+            return {
+              success: false,
+              message: 'Passwords do not match.',
+              errorType: 'matchPassword',
+            };
+          }
+          const isSamePassword = await bcrypt.compare(
+            newPassword,
+            user.password,
+          );
+          if (isSamePassword) {
+            return {
+              success: false,
+              message:
+                'New password cannot be the same as the current password',
+              errorType: 'samePassword',
+            };
+          }
+          user.password = newPassword;
+        }
+        await user.save();
+        context.req.session.user = {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+        };
+        console.log('Context: ', context.req.session);
+        context.req.session.save();
+
+        return {
+          success: true,
+          message: 'User updated successfully',
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: error,
         };
       }
     },

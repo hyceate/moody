@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { fetchUserData, fetchUserBoards, fetchUserPins } from '@/query/queries';
 import {
   Tab,
   Tabs,
@@ -10,12 +11,14 @@ import {
   Button,
 } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
-import { Masonry, Flex, Box, Image as Img } from 'gestalt';
+import { Masonry } from 'gestalt';
 import { Link } from 'react-router-dom';
-import { ProfileHead } from '../../components/profilehead';
+import { ProfileHead } from '@/components/profilehead';
+import { GridComponent } from '@/components/gridItem';
 import { useAuth } from '../../context/authContext';
-import { fetchData } from '../../query/fetch';
-import { getImageDimensions } from '../../actions/images';
+import { fetchData } from '@/query/fetch';
+import { getImageDimensions } from '@/actions/images';
+import { restoreScroll } from '@/actions/scroll';
 
 interface User {
   id: string;
@@ -39,38 +42,6 @@ interface Board {
   pins: Pin[];
   pinCount: number;
 }
-const fetchUserData = `
-  query getUserbyName($name: String!) {
-    userByName(username: $name) {
-      id
-      username
-    }
-  }`;
-const fetchUserBoards = `
-  query GetBoardsByUser($user_Id: ID!) {
-    boardsByUser(userId: $user_Id) {
-      id
-      title
-      private
-      pins {
-        id
-        title
-        description
-        imgPath
-      }
-      pinCount
-    }
-  }`;
-const fetchUserPins = `
-  query getPinsByUser($id: ID!) {
-    pinsByUser(id: $id) {
-      id
-      title
-      description
-      link
-      imgPath
-    }
-  }`;
 
 // component start
 export default function Profile() {
@@ -116,7 +87,7 @@ export default function Profile() {
     enabled: !!username && userData.isSuccess,
   });
   const BASE_URL = window.location.origin;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (pinsData.data && initialLoad.current) {
       setPins(pinsData.data);
       const fetchDimensions = async () => {
@@ -140,6 +111,9 @@ export default function Profile() {
       fetchDimensions();
     }
   }, [BASE_URL, pinsData.data]);
+  useEffect(() => {
+    restoreScroll();
+  }, []);
   useEffect(() => {
     document.title = `${username}'s Profile`;
   }, [username]);
@@ -261,30 +235,5 @@ export default function Profile() {
         </TabPanels>
       </Tabs>
     </div>
-  );
-}
-
-function GridComponent({ data, showPins }: { data: Pin; showPins: boolean }) {
-  return (
-    <Box rounding={8} marginBottom={3}>
-      <Flex direction="column">
-        <Flex.Item dataTestId={data.id}>
-          <div key={data.id} className={`fadeIn ${showPins ? 'loaded' : ''}`}>
-            <Link to={`/pin/${data.id}`}>
-              {data.dimensions && (
-                <Box rounding={5} overflow="hidden">
-                  <Img
-                    src={data.imgPath}
-                    alt={data.title || data.description || 'Image'}
-                    naturalWidth={data.dimensions?.width}
-                    naturalHeight={data.dimensions?.height}
-                  />
-                </Box>
-              )}
-            </Link>
-          </div>
-        </Flex.Item>
-      </Flex>
-    </Box>
   );
 }

@@ -44,6 +44,7 @@ export const Header = () => {
   const [isRegistrationSuccess, setIsRegistrationSuccess] = useState(false);
   const [isLoginForm, setIsLoginForm] = useState(true);
   const { isAuthenticated } = useAuth();
+
   const toggleForm = () => {
     setIsLoginForm((prev) => !prev);
     setIsRegistrationSuccess(false);
@@ -84,6 +85,7 @@ export const Header = () => {
       onOpen();
     }
   }, [onOpen]);
+
   return (
     <>
       <header className="md:sticky top-0 flex flex-row max-md:flex-wrap items-center h-auto w-full py-4 px-2 border-b-2 bg-white z-10 gap-3">
@@ -151,17 +153,22 @@ export const Header = () => {
           width="100%"
           maxWidth="25rem"
         >
-          <ModalHeader display="flex" alignItems="center" flexDir="column">
+          <ModalHeader
+            id="user-area"
+            display="flex"
+            alignItems="center"
+            flexDir="column"
+          >
             <h1 className="text-4xl font-bold">moody.</h1>
             <h2 className="my-2 lowercase text-2xl font-bold">
               {isLoginForm ? 'hello, Welcome back' : 'Welcome to moody'}
             </h2>
           </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
+          <ModalBody id="forms">
             {isLoginForm ? (
               <>
-                {isRegistrationSuccess ? (
+                {isRegistrationSuccess && (
                   <Alert
                     status="success"
                     flexDirection="column"
@@ -176,7 +183,7 @@ export const Header = () => {
                     <AlertTitle fontSize="lg">Successful Sign Up</AlertTitle>
                     Log in below!
                   </Alert>
-                ) : null}
+                )}
 
                 <LoginModal />
               </>

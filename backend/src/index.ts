@@ -4,7 +4,8 @@ import passport from 'passport';
 import LocalStrategy from 'passport-local';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import cookieSession from 'cookie-session';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import { createServer } from 'http';
 import { createYoga } from 'graphql-yoga';
 
@@ -25,23 +26,6 @@ import { customStorage } from './functions/multer';
 const startGraphQLYogaServer = async () => {
   const app = express() as Application;
   const httpServer = createServer(app);
-
-  const yoga = createYoga({
-    schema,
-    graphiql: false,
-  });
-
-  app.use(
-    '/api/graphql',
-    cors({
-      origin: 'http://localhost:5173',
-      credentials: true,
-    }),
-    bodyParser.json(),
-    yoga,
-  );
-
-  // Middleware
   app.use(
     cors({
       origin: ['http://localhost:5173'],
@@ -49,22 +33,25 @@ const startGraphQLYogaServer = async () => {
       credentials: true,
     }),
   );
-
   app.use(express.json());
-
+  const username = process.env.MONGODB_ADMINUSERNAME;
+  const password = process.env.MONGODB_ADMINPASSWORD;
+  const uri = `mongodb://${username}:${password}@localhost:27017/moody`;
   app.use(
-    cookieSession({
-      name: 'session',
-      secret: 'your_secret_key',
-      sameSite: false,
-      secure: false,
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    session({
+      secret: 'your-secret-key',
+      resave: true,
+      saveUninitialized: false,
+      store: new MongoStore({ mongoUrl: uri }),
+      cookie: {
+        sameSite: 'lax',
+        secure: false,
+        httpOnly: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 day expiration
+      },
+      name: 'ssid',
     }),
   );
-
-  app.use(passport.initialize());
-  app.use(passport.session());
 
   passport.use(
     new LocalStrategy.Strategy(
@@ -89,11 +76,27 @@ const startGraphQLYogaServer = async () => {
     ),
   );
 
-  app.use(passport.authenticate('session'));
-
+  const yoga = createYoga({
+    schema,
+    graphiql: false,
+  });
+  app.use(
+    '/api/graphql',
+    cors({
+      origin: 'http://localhost:5173',
+      credentials: true,
+    }),
+    bodyParser.json(),
+    yoga,
+  );
+  app.use((req, res, next) => {
+    console.log('Session middleware check:', req.session);
+    next();
+  });
   // Routes
   app.get('/', (req: Request, res: Response) => {
     res.send('server running');
+    console.log('Session: ', req.session);
   });
 
   app.get('/users/:username', async (req: Request, res: Response) => {
@@ -114,10 +117,8 @@ const startGraphQLYogaServer = async () => {
     user?: {
       id: string;
       username: string;
-      // email: string;
     };
   }
-
   app.post(
     '/api/auth/upload',
     (req: Request & { session: CustomSessionData }, res) => {

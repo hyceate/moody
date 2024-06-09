@@ -6,11 +6,18 @@ const userTypeDefs = gql`
     role: String!
     username: String!
     email: String!
+    password: String!
     avatarUrl: String
     createdAt: String!
     updatedAt: String!
   }
   type SignUpResponse {
+    success: Boolean!
+    message: String!
+    user: User
+    errorType: String
+  }
+  type UpdateResponse {
     success: Boolean!
     message: String!
     user: User
@@ -29,6 +36,7 @@ const userTypeDefs = gql`
   type Mutation {
     signUp(input: SignUpInput!): SignUpResponse!
     deleteAccount(id: ID!): DeleteAccountResponse!
+    updateAccount(input: UpdateInput!): UpdateResponse!
   }
 
   input SignUpInput {
@@ -37,6 +45,14 @@ const userTypeDefs = gql`
     email: String!
     password: String!
     avatarUrl: String
+  }
+  input UpdateInput {
+    id: String!
+    username: String
+    email: String
+    currentPassword: String
+    newPassword: String
+    confirmPassword: String
   }
 `;
 

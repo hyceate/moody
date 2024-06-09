@@ -16,7 +16,17 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*", "./dist/*", ""],
+      "pages/*": ["src/pages/*"],
+      "actions/*": ["src/actions/*"],
+      "components/*": ["src/components/*"],
+      "query/*": ["src/query/*"],
+      "types/*": ["src/@types/*"],
+      "public/*": ["public/*"]
+    }
   },
   "include": ["src"],
   "references": [

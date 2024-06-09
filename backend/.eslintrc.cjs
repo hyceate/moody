@@ -7,25 +7,9 @@ module.exports = {
   plugins: ["@typescript-eslint","@graphql-eslint","prettier"],
   rules: {
     "no-debugger": 0,
-    quotes: [
-      2,
-      "single",
-      {
-        avoidEscape: true,
-        allowTemplateLiterals: true,
-      },
-    ],
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-explicit-any": "off",
-    quotes: [
-      1,
-      'single',
-      {
-        avoidEscape: true,
-        allowTemplateLiterals: true,
-      },
-    ],
     'prettier/prettier': [
       'error',
       {

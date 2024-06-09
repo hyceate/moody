@@ -14,8 +14,13 @@ import {
   FormikHelpers,
   FieldProps,
 } from 'formik';
-import { validateEmail, validateName, validatePassword } from '../actions/auth';
+import {
+  validateEmail,
+  validateName,
+  validatePassword,
+} from 'actions/validations';
 import { request } from 'graphql-request';
+
 // type
 type RegistrationSuccessHandler = () => void;
 interface SignUpModalProps {
@@ -51,21 +56,20 @@ export const SignUpModal = ({
     password: '',
     username: '',
   };
-
+  const signUp = `
+  mutation SignUp($input: SignUpInput!) {
+    signUp(input: $input) {
+      success
+      message
+      errorType
+    }
+  }
+`;
   const handleSignup = async (
     values: FormValues,
     { setSubmitting, setFieldError }: FormikHelpers<FormValues>,
   ) => {
     try {
-      const signUp = `
-        mutation SignUp($input: SignUpInput!) {
-          signUp(input: $input) {
-            success
-            message
-            errorType
-          }
-        }
-      `;
       const response: SignUpResponse = await request(
         'http://localhost:3000/api/graphql',
         signUp,
@@ -115,6 +119,7 @@ export const SignUpModal = ({
                 <Field name="username" validate={validateName}>
                   {({ field, form }: FieldProps<FormValues>) => (
                     <FormControl
+                      id="username"
                       isRequired
                       isInvalid={
                         !!(form.errors.username && form.touched.username)
@@ -150,6 +155,7 @@ export const SignUpModal = ({
                 <Field name="email" validate={validateEmail}>
                   {({ field, form }: FieldProps<FormValues>) => (
                     <FormControl
+                      id="email"
                       isRequired
                       isInvalid={!!(form.errors.email && form.touched.email)}
                     >
@@ -179,6 +185,7 @@ export const SignUpModal = ({
                 <Field name="password" validate={validatePassword}>
                   {({ field, form }: FieldProps<FormValues>) => (
                     <FormControl
+                      id="password"
                       isRequired
                       isInvalid={
                         !!(form.errors.password && form.touched.password)
@@ -191,7 +198,13 @@ export const SignUpModal = ({
                       >
                         Password
                       </FormLabel>
-                      <FormHelperText>Minimum 8 characters</FormHelperText>
+                      {form.errors.password && form.touched.password ? (
+                        <FormErrorMessage>
+                          {props.errors.password}
+                        </FormErrorMessage>
+                      ) : (
+                        <FormHelperText>Minimum 8 characters</FormHelperText>
+                      )}
                       <InputGroup>
                         <Input
                           {...field}
@@ -208,14 +221,20 @@ export const SignUpModal = ({
                           </Button>
                         </InputRightElement>
                       </InputGroup>
-                      <FormErrorMessage>
-                        {props.errors.password}
-                      </FormErrorMessage>
                     </FormControl>
                   )}
                 </Field>
               </li>
               <li>
+                <Button
+                  type="reset"
+                  py="1.4rem"
+                  className="w-full text-lg font-bold mt-5 transition-colors"
+                  rounded="full"
+                  isLoading={props.isSubmitting}
+                >
+                  Reset Form
+                </Button>
                 <Button
                   type="submit"
                   bg="actions.pink.50"
@@ -224,7 +243,7 @@ export const SignUpModal = ({
                     background: 'actions.pink.100',
                   }}
                   py="1.4rem"
-                  className="w-full text-lg font-bold mt-5 transition-colors"
+                  className="w-full text-lg font-bold mt-2 transition-colors"
                   rounded="full"
                   isLoading={props.isSubmitting}
                 >

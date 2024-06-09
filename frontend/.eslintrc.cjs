@@ -13,15 +13,6 @@ module.exports = {
   ],
   ignorePatterns: ["dist", ".eslintrc.cjs"],
   parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: "latest",
-    sourceType: "module",
-    project: ["./tsconfig.json", "./tsconfig.node.json"],
-    tsconfigRootDir: __dirname,
-    ecmaFeatures: {
-      jsx: true,
-    },
-  },
   plugins: ["react", "react-refresh", "react-hooks", "prettier"],
   rules: {
     "comma-dangle": 0,
@@ -51,14 +42,6 @@ module.exports = {
       { allowConstantExport: true },
     ],
     "@typescript-eslint/no-explicit-any": "off",
-    quotes: [
-      2,
-      "single",
-      {
-        avoidEscape: true,
-        allowTemplateLiterals: true,
-      },
-    ],
     "prettier/prettier": [
       "error",
       {

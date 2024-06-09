@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { Button, Input, InputGroup, InputRightElement } from '@chakra-ui/react';
+import {
+  Button,
+  FormHelperText,
+  Input,
+  InputGroup,
+  InputRightElement,
+} from '@chakra-ui/react';
 import { FormControl, FormLabel, FormErrorMessage } from '@chakra-ui/react';
 import { Field, Form, Formik, FormikProps, FieldProps } from 'formik';
 import { handleLogIn } from '../actions/auth';
-import { validateEmail, validatePassword } from '../actions/auth';
+import { validateEmail, validatePassword } from 'actions/validations';
 // component start
 export const LoginModal = () => {
   const [show, setShow] = useState(false);
@@ -34,13 +40,20 @@ export const LoginModal = () => {
                 <Field name="email" validate={validateEmail}>
                   {({ field, form }: FieldProps<FormValues>) => (
                     <FormControl
+                      id="email"
                       isRequired
                       isInvalid={!!(form.errors.email && form.touched.email)}
                     >
-                      <FormErrorMessage>{props.errors.email}</FormErrorMessage>
-                      <FormLabel htmlFor="email" fontWeight="600">
+                      <FormLabel htmlFor="email" fontWeight="600" mb="-10px">
                         Email address
                       </FormLabel>
+                      {form.errors.email && form.touched.email ? (
+                        <FormErrorMessage>
+                          {props.errors.email}
+                        </FormErrorMessage>
+                      ) : (
+                        <FormHelperText>Enter a correct email.</FormHelperText>
+                      )}
                       <Input
                         {...field}
                         value={props.values.email}
@@ -54,14 +67,22 @@ export const LoginModal = () => {
                 <Field name="password" validate={validatePassword}>
                   {({ field, form }: FieldProps<FormValues>) => (
                     <FormControl
+                      id="password"
                       isRequired
                       isInvalid={
                         !!(form.errors.password && form.touched.password)
                       }
                     >
-                      <FormLabel htmlFor="password" fontWeight="600">
+                      <FormLabel htmlFor="password" fontWeight="600" mb="-10px">
                         Password
                       </FormLabel>
+                      {form.errors.password && form.touched.password ? (
+                        <FormErrorMessage>
+                          {props.errors.password}
+                        </FormErrorMessage>
+                      ) : (
+                        <FormHelperText>Min 8 characters</FormHelperText>
+                      )}
                       <InputGroup>
                         <Input
                           {...field}
@@ -80,9 +101,6 @@ export const LoginModal = () => {
                           </Button>
                         </InputRightElement>
                       </InputGroup>
-                      <FormErrorMessage>
-                        {props.errors.password}
-                      </FormErrorMessage>
                     </FormControl>
                   )}
                 </Field>

@@ -6,35 +6,6 @@ interface FormValues {
   password: string;
   username?: string;
 }
-
-export const validateName = (values: string) => {
-  let error;
-  if (!values) {
-    error = 'Please enter an username';
-  } else if (values.length < 2 || values.length > 24) {
-    error = 'Username should be longer than 2 character';
-  }
-  return error;
-};
-export const validatePassword = (values: string) => {
-  let error;
-  if (!values) {
-    error = 'Please input a password between 8 - 24 characters';
-  } else if (values.length < 8 || values.length > 24) {
-    error = 'Password must be between 8 and 24 characters';
-  }
-  return error;
-};
-export function validateEmail(value: string) {
-  let error;
-  if (!value) {
-    error = 'Please input an email';
-  } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
-    error = 'Invalid email address';
-  }
-  return error;
-}
-
 // login
 export const handleLogIn = async (
   values: FormValues,
@@ -64,6 +35,7 @@ export const handleLogIn = async (
     .catch((Error) => {
       if (Error.response && Error.response.status === 401) {
         setFieldError('email', 'Incorrect email or password');
+        setFieldError('password', 'Incorrect email or password');
         setSubmitting(false);
       } else {
         console.error('Unexpected error occurred ' + Error.response.status);
@@ -109,6 +81,7 @@ export const checkAuth = async (): Promise<UserData | null> => {
       timeout: 5000,
     });
     if (response && response.status === 200) {
+      console.log(response);
       return response.data;
     }
   } catch (error) {
