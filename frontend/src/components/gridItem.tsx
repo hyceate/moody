@@ -1,12 +1,13 @@
 import { Box, Flex, Image as Img } from 'gestalt';
-import { Avatar } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import { handleSaveScrollPos } from '@/actions/scroll';
 import './css/gestalt.css';
 import './css/transitions.css';
+import { ProfileAvatar } from './avatar';
 interface User {
   id: string;
   username: string;
+  avatarUrl: string;
 }
 interface Pins {
   dimensions: { width: number; height: number };
@@ -89,7 +90,7 @@ export const GridComponentWithUser = ({
                   to={`/profile/${data.user.username}`}
                   className="flex flex-row items-center gap-2 hover:underline"
                 >
-                  <Avatar boxSize={7}></Avatar>
+                  <ProfileAvatar size="2rem" src={data.user.avatarUrl} />
                   <h2 className="text-[0.8rem]">{data.user.username}</h2>
                 </Link>
               </section>

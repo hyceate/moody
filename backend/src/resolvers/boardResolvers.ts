@@ -45,12 +45,11 @@ export const boardResolvers = {
           .populate({
             path: 'pins',
             model: Pin,
-            populate: [
-              { path: 'user', model: User },
-              { path: 'savedBy', model: User },
-            ],
+            populate: [{ path: 'user', model: User }],
+            options: { sort: { createdAt: -1 } },
           })
           .populate({ path: 'user', model: User });
+
         return boards;
       } catch (error) {
         console.error('Error fetching boards:', error);
@@ -65,12 +64,8 @@ export const boardResolvers = {
           .populate({
             path: 'pins',
             model: Pin,
-            populate: [
-              { path: 'user', model: User },
-              { path: 'savedBy', model: User },
-            ],
+            populate: [{ path: 'user', model: User }],
           });
-
         return board;
       } catch (error) {
         console.error('Failed to fetch board:', error);
@@ -87,10 +82,7 @@ export const boardResolvers = {
           .populate({
             path: 'pins',
             model: Pin,
-            populate: [
-              { path: 'user', model: User },
-              { path: 'savedBy', model: User },
-            ],
+            populate: [{ path: 'user', model: User }],
           })
           .populate({ path: 'user', model: User });
         return boards;
@@ -116,10 +108,8 @@ export const boardResolvers = {
           .populate({
             path: 'pins',
             model: Pin,
-            populate: [
-              { path: 'user', model: User },
-              { path: 'savedBy', model: User },
-            ],
+            populate: [{ path: 'user', model: User }],
+            options: { sort: { createdAt: -1 } },
           })
           .populate({ path: 'user', model: User });
 
@@ -135,10 +125,7 @@ export const boardResolvers = {
           .populate({
             path: 'pins',
             model: Pin,
-            populate: [
-              { path: 'user', model: User },
-              { path: 'savedBy', model: User },
-            ],
+            populate: [{ path: 'user', model: User }],
           })
           .populate({ path: 'user', model: User });
         return boards;

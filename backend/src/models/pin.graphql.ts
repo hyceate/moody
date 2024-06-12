@@ -17,20 +17,27 @@ const pinTypeDefs = gql`
     title: String
     description: String
     imgPath: String
-    createdAt: String # Assuming createdAt is a date string
+    createdAt: String
     user: User # Reference to the owner of the pin
-    savedBy: [User!] # Array of users who saved the pin
     tags: [String!] # Array of tags
     private: Boolean
     link: String
     comments: [Comment!] # Array of comments on the pin
     board: [String!]
   }
+  input PinsSortInput {
+    field: String!
+    direction: SortDirection!
+  }
 
+  enum SortDirection {
+    ASC
+    DESC
+  }
   type Query {
-    pins: [Pin!]! # Fetch all Pin
+    pins(sort: PinsSortInput): [Pin!]!
     pinsByUser(id: ID!): [Pin!]
-    pin(id: ID!): Pin # Get Pin by ID
+    pin(id: ID!): Pin
   }
 
   type CreatePinResponse {
@@ -44,7 +51,7 @@ const pinTypeDefs = gql`
   }
   type Mutation {
     createPin(input: CreatePinInput!): CreatePinResponse!
-    deletePin(input: ID!): DeletePinResponse!
+    deletePin(id: ID!): DeletePinResponse!
   }
 
   input CreatePinInput {

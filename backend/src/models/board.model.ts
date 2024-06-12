@@ -1,5 +1,3 @@
-import { Pin } from './pin.model';
-import { User } from './user.model';
 import mongoose, { Schema, Types } from 'mongoose';
 
 interface Board {
@@ -48,16 +46,14 @@ const boardSchema: Schema<Board> = new Schema(
   },
   { timestamps: true, toObject: { virtuals: true } },
 );
-// Define the virtual field `pinCount`
+
 boardSchema.virtual('pinCount').get(function (this: { pins: any[] }): number {
   return this.pins.length;
 });
-
 // Ensure virtual fields are included when converting to JSON
 boardSchema.set('toJSON', {
   virtuals: true,
 });
-
 // Ensure virtual fields are included when converting to Object
 boardSchema.set('toObject', {
   virtuals: true,

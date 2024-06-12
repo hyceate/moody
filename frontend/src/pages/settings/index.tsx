@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/authContext';
 import {
-  Avatar,
   Button,
   FormControl,
   FormErrorMessage,
@@ -11,6 +10,13 @@ import {
   Input,
   InputGroup,
   InputRightElement,
+  useToast,
+  Modal,
+  ModalBody,
+  ModalContent,
+  useDisclosure,
+  ModalHeader,
+  ModalFooter,
 } from '@chakra-ui/react';
 import { Navigate } from 'react-router-dom';
 import {
@@ -28,6 +34,8 @@ import {
   validateNewPassword,
 } from 'actions/validations';
 import { GraphQLClient } from 'graphql-request';
+import axios from 'axios';
+import { ProfileAvatar } from '@/components/avatar';
 
 interface FormValues {
   id: string;
@@ -55,13 +63,20 @@ mutation UpdateAccount($input: UpdateInput!) {
 
 // Settings page start
 export default function Settings() {
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const { isAuthenticated, user, refreshAuth } = useAuth();
   const [showPassword, setShowPassword] = useState({
     currentPassword: false,
     newPassword: false,
     confirmPassword: false,
   });
-
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showLabel, setShowLabel] = useState(true);
+  const [showImagePin, setShowImagePin] = useState(false);
+  useEffect(() => {
+    document.title = 'User Settings';
+  }, []);
+  const toast = useToast();
   const handleTogglePassword = (
     field: 'currentPassword' | 'newPassword' | 'confirmPassword',
   ) => {
@@ -70,19 +85,75 @@ export default function Settings() {
       [field]: !prevState[field],
     }));
   };
-  useEffect(() => {
-    document.title = 'User Settings';
-  }, []);
+
+  const uploadAvatar = async (file: File, userId: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('user', userId);
+      const response = await axios.post(
+        `http://localhost:3000/api/auth/upload-avatar`,
+        formData,
+        {
+          withCredentials: true,
+          timeout: 5000,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      if (/image\/*/.test(file.type)) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setImagePreview(reader.result as string);
+          setShowLabel(false);
+          setShowImagePin(true);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const fileInput = event.currentTarget.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    const file = fileInput?.files?.[0];
+    if (user && file) {
+      try {
+        const avatarPath = await uploadAvatar(file, user.id);
+        refreshAuth();
+        toast({
+          position: 'bottom',
+          title: 'Profile Image updated',
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+        return avatarPath;
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+      }
+    }
+  };
   const endpoint = 'http://localhost:3000/api/graphql';
   const createGraphQLClient = () => {
     return new GraphQLClient(endpoint, {
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
     });
   };
-
   const updateMutation = useMutation({
     mutationFn: async (input: FormValues) => {
       const client = createGraphQLClient();
@@ -92,6 +163,7 @@ export default function Settings() {
       return response;
     },
   });
+
   if (!isAuthenticated || !user) return <Navigate to="/" replace></Navigate>;
   const id = user.id;
   const username = user.username;
@@ -140,23 +212,37 @@ export default function Settings() {
         }
         resetForm();
         setSubmitting(false);
+        toast({
+          position: 'bottom',
+          title: 'Profile updated.',
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
         refreshAuth();
       } catch (error) {
         setSubmitting(false);
         return error;
       }
     } else {
-      console.log('No changes to Submit');
+      toast({
+        position: 'bottom',
+        title: 'No changes to submit.',
+        status: 'error',
+        duration: 2000,
+        isClosable: true,
+      });
     }
     setSubmitting(false);
   };
+
   return (
     <>
       <section className="flex flex-col justify-center items-center gap-5 mt-5 pb-10">
         <h1 className="text-2xl font-bold">edit profile</h1>
         <div className="flex flex-col justify-center items-center gap-3 mb-5">
-          <Avatar boxSize="90px" />
-          <Button>Change Avatar</Button>
+          <ProfileAvatar size="150px" src={user.avatarUrl} />
+          <Button onClick={onOpen}>Change Avatar</Button>
         </div>
 
         <Formik
@@ -363,6 +449,80 @@ export default function Settings() {
             </Form>
           )}
         </Formik>
+
+        <Modal isOpen={isOpen} onClose={onClose}>
+          <ModalContent
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <ModalHeader>Upload an Profile Picture</ModalHeader>
+            <ModalBody>
+              <form
+                encType="multipart/form-data"
+                className="flex flex-col justify-center items-center gap-1"
+                onSubmit={handleFormSubmit}
+              >
+                {showLabel && !showImagePin ? (
+                  <div className="hover:outline rounded-full">
+                    <FormLabel
+                      className="cursor-pointer"
+                      padding="0"
+                      margin="0"
+                    >
+                      <div className="text-center bg-slate-200 hover:bg-slate-300 p-5 rounded-full">
+                        Click to Upload
+                      </div>
+                      <input
+                        id="upload_avatar"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        name="avatar"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                      ></input>
+                    </FormLabel>
+                  </div>
+                ) : (
+                  <div className="relative flex flex-col justify-center items-center hover:outline rounded-full w-[10rem] aspect-square overflow-hidden">
+                    <FormLabel
+                      htmlFor="upload_avatar"
+                      padding="0"
+                      margin="0"
+                      width="100%"
+                      height="100%"
+                    >
+                      <img
+                        src={imagePreview || ''}
+                        alt="pin_image"
+                        className="object-contain"
+                      />
+                      <input
+                        id="upload_avatar"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        name="avatar"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                      ></input>
+                    </FormLabel>
+                  </div>
+                )}
+
+                <ModalFooter display="flex" justifyContent="center">
+                  <Button
+                    type="submit"
+                    bg="actions.pink.50"
+                    color="white"
+                    _hover={{ background: 'actions.pink.100' }}
+                  >
+                    Submit
+                  </Button>
+                </ModalFooter>
+              </form>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
       </section>
     </>
   );

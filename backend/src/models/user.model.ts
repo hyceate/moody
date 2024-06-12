@@ -9,6 +9,7 @@ interface User {
   password: string;
   avatarUrl?: string;
   comparePassword(password: string): Promise<boolean>;
+  updateAvatar(filename: string, path: string): Promise<void>;
 }
 
 const userSchema: Schema<User> = new Schema(
@@ -68,5 +69,11 @@ userSchema.methods.comparePassword = async function (
   const isMatch = await bcrypt.compare(loginPass, this.password);
   return isMatch;
 };
-
+userSchema.methods.updateAvatar = async function (
+  filename: string,
+  path: string,
+): Promise<void> {
+  this.avatarUrl = `/images/${this._id}/${filename}`;
+  await this.save();
+};
 export const User = mongoose.model<User>('user', userSchema);

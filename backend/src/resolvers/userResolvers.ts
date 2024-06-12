@@ -3,7 +3,7 @@ import { Board } from '../models/board.model';
 import { Pin } from '../models/pin.model';
 import bcrypt from 'bcryptjs';
 import { validateEmail, validateLength } from '../functions/validate';
-import { Request, Response } from 'express';
+
 interface SignUpInput {
   username: string;
   email: string;
@@ -22,6 +22,7 @@ export interface CustomSessionData {
     id: string;
     username: string;
     email: string;
+    avatarUrl: string;
   };
 }
 export const userResolvers = {
@@ -154,16 +155,17 @@ export const userResolvers = {
         }
         await user.save();
         context.req.session.user = {
-          id: user._id,
+          id: user.id,
           username: user.username,
           email: user.email,
+          avatarUrl: user.avatarUrl,
         };
         console.log('Context: ', context.req.session);
-        context.req.session.save();
 
         return {
           success: true,
           message: 'User updated successfully',
+          user: context.req.session.user,
         };
       } catch (error) {
         return {

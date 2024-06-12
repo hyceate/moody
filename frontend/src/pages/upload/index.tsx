@@ -4,12 +4,16 @@ import {
   FormControl,
   FormLabel,
   FormHelperText,
-  Avatar,
   Select,
   Textarea,
   Button,
 } from '@chakra-ui/react';
-import { ArrowUpIcon, SmallCloseIcon, ChevronDownIcon } from '@chakra-ui/icons';
+import {
+  ArrowUpIcon,
+  SmallCloseIcon,
+  ChevronDownIcon,
+  CloseIcon,
+} from '@chakra-ui/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import request from 'graphql-request';
@@ -17,11 +21,27 @@ import { fetchData } from '../../query/fetch';
 import './upload.css';
 import { useAuth } from '../../context/authContext';
 import { Navigate } from 'react-router-dom';
+import { createPinMutationSchema, fetchBoardsForForm } from 'query/queries';
+import { ProfileAvatar } from '@/components/avatar';
+interface PinDetails {
+  createPin: {
+    pin: {
+      id: string;
+      board: string;
+      title: string | null;
+      imgPath: string;
+      link: string | null;
+      tags: [string];
+      private: boolean;
+    };
+  };
+}
 // component start
 export default function Upload() {
   const { isAuthenticated, user } = useAuth();
   const userId = user?.id;
   const username = user?.username;
+  const avatar = user?.avatarUrl;
   const [pinDetails, setPinDetails] = useState({
     user: userId,
     board: '',
@@ -29,6 +49,7 @@ export default function Upload() {
     description: '',
     link: '',
     img_blob: '',
+    private: 'false',
   });
 
   const [input, setInput] = useState<string>('');
@@ -37,30 +58,7 @@ export default function Upload() {
   const [showImagePin, setImagePin] = useState(false);
   const [isKeyReleased, setIsKeyReleased] = useState(false);
   const [imageFile, setImageFile] = useState(null);
-  const createPinMutationSchema = `
-    mutation CreatePin($input: CreatePinInput!) {
-      createPin(input: $input) {
-        success
-        message
-        pin {
-          id
-          title
-          description
-          imgPath
-          tags
-          link
-        }
-      }
-    }
-  `;
-  const fetchBoardsForForm = `
-  query GetBoardsByUser($userId: ID!) {
-    boardsByUser(userId: $userId) {
-      id
-      title
-    }
-  }
-`;
+
   const [hasFetched, setHasFetched] = useState(false);
   interface Board {
     id: string;
@@ -80,7 +78,6 @@ export default function Upload() {
       const formData = new FormData();
       formData.append('imgFile', file);
       formData.append('user', userId);
-
       const response = await axios.post(
         'http://localhost:3000/api/auth/upload',
         formData,
@@ -89,10 +86,9 @@ export default function Upload() {
             'Content-Type': 'multipart/form-data',
           },
           withCredentials: true,
-          // timeout: 5000,
+          timeout: 5000,
         },
       );
-
       return response.data.filePath;
     } catch (error) {
       console.error(
@@ -100,23 +96,26 @@ export default function Upload() {
         // @ts-expect-error error type
         error.response ? error.response.data : error.message,
       );
-      throw error; // Re-throw the error for higher-level handling
+      throw error;
     }
   };
   const createPinMutation = useMutation({
     mutationFn: async (input) => {
       const endpoint = 'http://localhost:3000/api/graphql';
-      const response = await request(endpoint, createPinMutationSchema, {
-        input,
-      });
+      const response: PinDetails = await request(
+        endpoint,
+        createPinMutationSchema,
+        {
+          input,
+        },
+      );
       return response;
     },
     onSuccess: (data) => {
-      console.log('Mutation successful:', data);
+      console.log('Mutation successful:', data.createPin.pin);
     },
     onError: (error) => {
       console.error('Mutation error:', error);
-      // Handle the error (e.g., display an error message)
     },
   });
   const upload_img = (event: any, pinDetails: any, setPinDetails: any) => {
@@ -144,7 +143,7 @@ export default function Upload() {
   };
   const onKeyDown = (e: KeyboardEvent) => {
     const { key } = e;
-    const trimmedInput = input.trim(); // remove whitespace
+    const trimmedInput = input.trim();
     if (key === ',' && trimmedInput.length && !tags.includes(trimmedInput)) {
       e.preventDefault();
       setTags(updateTags(tags, trimmedInput));
@@ -220,8 +219,12 @@ export default function Upload() {
       </>
     );
   return (
-    <>
-      <form onSubmit={handleSubmit} encType="multipart/form-data">
+    <div className="mt-2 mb-2 drop-shadow-xl max-[1024px]:max-w-[508px] w-full max-w-[63.5rem]">
+      <form
+        id="upload_pin"
+        onSubmit={handleSubmit}
+        encType="multipart/form-data"
+      >
         <FormControl
           id="upload_form"
           className="flex flex-col max-w-[72rem] justify-center gap-10 p-10 rounded-xl border-2"
@@ -252,7 +255,11 @@ export default function Upload() {
               </Select>
               <Button
                 type="submit"
-                className="inline-flex whitespace-nowrap p-2 rounded-xl bg-action text-white font-semibold w-auto items-center"
+                bg="actions.pink.50"
+                color="white"
+                _hover={{
+                  background: 'actions.pink.100',
+                }}
               >
                 Save Pin
               </Button>
@@ -260,17 +267,16 @@ export default function Upload() {
           </header>
           <section
             id="form_body"
-            className="flex flex-row max-w-[72rem] justify-center gap-10 "
+            className="flex flex-row flex-wrap justify-center gap-10 "
           >
             {/* image */}
-            <aside className="flex flex-1 justify-center min-w-[271px] h-full max-h-[600px] relative">
+            <aside className="flex flex-auto justify-center min-w-[271px] max-h-[508px] max-w-[25rem] relative">
               {showLabel && !showImagePin ? (
                 <div className="flex flex-1 relative">
                   <FormLabel
-                    htmlFor="upload_img"
                     display="flex"
                     margin={0}
-                    className="flex-auto flex-col justify-center items-center p-5 rounded-xl  h-full min-h-[400px] cursor-pointer bg-slate-100 border-slate-400 border-2 border-dashed"
+                    className="flex-auto flex-col justify-center items-center p-5 rounded-xl h-full min-h-[500px] w-full max-w-[508px] cursor-pointer bg-slate-100 border-slate-400 border-2 border-dashed"
                   >
                     <div className="flex flex-auto flex-col justify-center items-center text-lg uppercase font-semibold">
                       <ArrowUpIcon
@@ -289,31 +295,42 @@ export default function Upload() {
                   </FormLabel>
                 </div>
               ) : (
-                <section className="image_pin max-w-[21rem] flex rounded-xl overflow-hidden">
-                  <img
-                    src={pinDetails.img_blob}
-                    alt="pin_image"
-                    className="object-contain"
-                  />
-                </section>
+                <>
+                  <section className="image_pin max-w-[25rem] flex flex-col relative">
+                    <img
+                      src={pinDetails.img_blob}
+                      alt="pin_image"
+                      className="object-contain rounded-xl "
+                    />
+                    <button
+                      className="absolute top-0 right-0 m-2 w-[2.5rem] aspect-square cursor-pointer rounded-full bg-gray-200 hover:bg-slate-400 hover:text-white hover:outline hover:outline-black flex justify-center items-center"
+                      onClick={() => {
+                        setImagePin(false);
+                        setShowLabel(true);
+                        setImageFile(null);
+                      }}
+                    >
+                      <CloseIcon boxSize="1rem" />
+                    </button>
+                  </section>
+                </>
               )}
 
               <Input
                 type="file"
                 name="upload_img"
-                id="upload_img"
                 value=""
                 size="md"
                 className="hidden"
                 variant="unstyled"
                 accept=".jpg,.jpeg,.png,.webp"
-                onChange={
-                  (event) => upload_img(event, pinDetails, setPinDetails) // Pass arguments
+                onChange={(event) =>
+                  upload_img(event, pinDetails, setPinDetails)
                 }
               />
             </aside>
             {/* pin details */}
-            <div className="m-2 max-w-[20rem]">
+            <div className="m-2 max-w-[31.75rem]">
               <ul
                 id="form_pin_details"
                 className="flex flex-col flex-auto w-full"
@@ -357,7 +374,7 @@ export default function Upload() {
                 </li>
                 <li className="userSection">
                   <div className="py-2 flex items-center gap-2">
-                    <Avatar name={`${username}`} boxSize="50px"></Avatar>
+                    <ProfileAvatar size="4rem" src={avatar} />
                     <h4 className="">{username}</h4>
                   </div>
                 </li>
@@ -436,6 +453,6 @@ export default function Upload() {
           </section>
         </FormControl>
       </form>
-    </>
+    </div>
   );
 }

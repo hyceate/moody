@@ -8,7 +8,7 @@ import {
 } from '@chakra-ui/react';
 import { FormControl, FormLabel, FormErrorMessage } from '@chakra-ui/react';
 import { Field, Form, Formik, FormikProps, FieldProps } from 'formik';
-import { handleLogIn } from '../actions/auth';
+import { handleLogIn } from '../actions/handleUser';
 import { validateEmail, validatePassword } from 'actions/validations';
 // component start
 export const LoginModal = () => {

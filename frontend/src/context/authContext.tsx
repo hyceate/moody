@@ -1,10 +1,11 @@
 import { ReactNode, createContext, useContext, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checkAuth } from '../actions/auth';
 interface User {
   id: string;
   username: string;
   email: string;
+  avatarUrl: string;
 }
 
 const AuthContext = createContext<{
@@ -20,11 +21,12 @@ const AuthContext = createContext<{
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [key, setKey] = useState(false);
+  const [key, setKey] = useState(0);
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['auth', key],
     queryFn: checkAuth,
-    retry: false,
+    retry: 10,
   });
 
   if (isLoading) return <div></div>;
@@ -32,8 +34,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAuthenticated = !!data;
   const user = isAuthenticated ? data.user : null;
-  const refreshAuth = () => {
-    setKey((prevKey) => !prevKey);
+  const refreshAuth = async () => {
+    setKey((prevKey) => prevKey + 1);
+    queryClient.invalidateQueries({ queryKey: ['auth'] });
   };
   return (
     <AuthContext.Provider
@@ -44,6 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   return useContext(AuthContext);
 };

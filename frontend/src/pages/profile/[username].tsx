@@ -13,12 +13,12 @@ import {
 import { AddIcon } from '@chakra-ui/icons';
 import { Masonry } from 'gestalt';
 import { Link } from 'react-router-dom';
-import { ProfileHead } from '@/components/profilehead';
 import { GridComponent } from '@/components/gridItem';
 import { useAuth } from '../../context/authContext';
 import { fetchData } from '@/query/fetch';
 import { getImageDimensions } from '@/actions/images';
 import { restoreScroll } from '@/actions/scroll';
+import { ProfileAvatar } from '@/components/avatar';
 
 interface User {
   id: string;
@@ -46,7 +46,7 @@ interface Board {
 // component start
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   const [pins, setPins] = useState<Pin[]>([]);
   const [showPins, setShowPins] = useState(false);
@@ -126,19 +126,18 @@ export default function Profile() {
     return <div>Invalid parameters</div>;
   }
   return (
-    <div
-      id="profile"
-      className="flex flex-col gap-10 w-full max-w-[72rem] items-center"
-    >
+    <div id="profile" className="flex flex-col gap-5 w-full items-center">
       <section className="flex flex-col items-center gap-2 mt-5">
-        <ProfileHead username={username} />
-        {isAuthenticated && (
-          <Button>
+        <ProfileAvatar size="9rem" src={user?.avatarUrl} />
+        <h1 className="text-4xl">{username}</h1>
+        {userData.data && isAuthenticated && userData.data.id === user?.id && (
+          <Button mt="10px">
             <Link to="/settings">Edit Profile</Link>
           </Button>
         )}
       </section>
       <Tabs
+        size="lg"
         isLazy
         display="flex"
         flexDir="column"
@@ -164,7 +163,7 @@ export default function Profile() {
           <TabPanel>
             {pinsData.data && pinsData.data.length > 0 ? (
               <Masonry
-                columnWidth={220}
+                columnWidth={200}
                 gutterWidth={20}
                 items={pins}
                 layout="flexible"
@@ -181,15 +180,17 @@ export default function Profile() {
             )}
           </TabPanel>
           <TabPanel>
-            {isAuthenticated && (
-              <>
-                <div className="flex justify-end w-full">
-                  <button className="">
-                    <AddIcon />
-                  </button>
-                </div>
-              </>
-            )}
+            {userData.data &&
+              isAuthenticated &&
+              userData.data.id === user?.id && (
+                <>
+                  <div className="flex justify-end w-full">
+                    <button className="">
+                      <AddIcon />
+                    </button>
+                  </div>
+                </>
+              )}
 
             <section className="flex flex-wrap flex-row justify-center items-center gap-2">
               {boardData.data?.map((board) => (

@@ -1,17 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { fetchData } from '../../query/fetch';
 import { fetchPinData } from '../../query/queries';
 import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import '../../components/css/transitions.css';
-import { Avatar } from '@chakra-ui/react';
 import { Button, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react';
-import { ExternalLinkIcon } from '@chakra-ui/icons';
+import { ExternalLinkIcon, EditIcon } from '@chakra-ui/icons';
 import { useAuth } from '../../context/authContext';
+import { GraphQLClient } from 'graphql-request';
+import { ProfileAvatar } from '@/components/avatar';
 
 interface User {
   id: string;
   username: string;
+  avatarUrl: string;
 }
 interface Pin {
   id: string;
@@ -21,10 +23,29 @@ interface Pin {
   imgPath: string;
   user: User;
 }
+interface DeleteResponse {
+  deletePin: {
+    success: boolean;
+    message: string;
+    errorType: string;
+  };
+}
+const deletePin = `
+  mutation deletePin($id: ID!){
+    deletePin(id: $id){
+    success
+    message
+    }
+}`;
+const endpoint = 'http://localhost:3000/api/graphql';
+const createGraphQLClient = () => {
+  return new GraphQLClient(endpoint, {
+    credentials: 'include',
+  });
+};
 export default function Pin() {
   const { id } = useParams<{ id: string }>();
-  const { isAuthenticated } = useAuth();
-  const endpoint = 'http://localhost:3000/api/graphql';
+  const { isAuthenticated, user } = useAuth();
   const { data, isLoading, error } = useQuery<Pin>({
     queryKey: ['pinDeets', id, endpoint, fetchPinData],
     queryFn: () =>
@@ -32,7 +53,20 @@ export default function Pin() {
         (data) => data.pin,
       ),
   });
-
+  const deletePinMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const client = createGraphQLClient();
+      const response: DeleteResponse = await client.request(deletePin, {
+        id: id,
+      });
+      return response;
+    },
+  });
+  const handleDelete = async () => {
+    if (id) {
+      await deletePinMutation.mutateAsync(id);
+    }
+  };
   const imageContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (data?.imgPath && imageContainerRef.current) {
@@ -43,7 +77,6 @@ export default function Pin() {
         const container = imageContainerRef.current;
 
         if (container) {
-          // Add null check for container
           container.classList.remove(
             'portrait-image',
             'landscape-image',
@@ -83,9 +116,9 @@ export default function Pin() {
   useEffect(() => {
     if (!isLoading && data) {
       document.querySelectorAll('.fadeIn').forEach((element) => {
-        element.classList.remove('loaded'); // Remove the class first to reset the state
+        element.classList.remove('loaded');
         setTimeout(() => {
-          element.classList.add('loaded'); // Add the class back to trigger the animation
+          element.classList.add('loaded');
         }, 0);
       });
     }
@@ -96,10 +129,10 @@ export default function Pin() {
     <div className="flex flex-1 flex-col w-full justify-center items-center px-5 max-w-[72rem]">
       <section
         id="pin-container"
-        className="flex flex-wrap flex-row justify-center bg-white drop-shadow-xl max-[1024px]:max-w-[508px] w-full max-w-[63.5rem] rounded-[2rem] overflow-hidden fadeIn mt-5 gap-0"
+        className="flex flex-wrap flex-row justify-center bg-white drop-shadow-xl max-[1024px]:max-w-[508px] w-full max-w-[63.5rem] rounded-[2rem] overflow-hidden fadeIn mt-3 gap-0"
         style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 20px 0px' }}
       >
-        {!isLoading && data ? (
+        {!isLoading && data && (
           <>
             <div
               id="closeup"
@@ -132,12 +165,31 @@ export default function Pin() {
                       <div className="text-3xl p-0 mb-3">...</div>
                     </MenuButton>
                     <MenuList>
-                      {isAuthenticated && <MenuItem>Edit Pin</MenuItem>}
+                      {data && isAuthenticated && data.user.id === user?.id && (
+                        <MenuItem>
+                          <span>Edit Pin</span>
+                          <EditIcon ml="5px" />
+                        </MenuItem>
+                      )}
                       <MenuItem>
                         <a href={`${data.imgPath}`} download>
                           Download Image
                         </a>
                       </MenuItem>
+                      {data && isAuthenticated && data.user.id === user?.id && (
+                        <MenuItem
+                          as={Button}
+                          justifyContent="start"
+                          bg="actions.pink.50"
+                          color="white"
+                          _hover={{
+                            background: 'actions.pink.100',
+                          }}
+                          onClick={() => handleDelete()}
+                        >
+                          Delete Pin
+                        </MenuItem>
+                      )}
                     </MenuList>
                   </Menu>
                 </li>
@@ -175,14 +227,14 @@ export default function Pin() {
                     to={`/profile/${data.user.username}`}
                     className="flex flex-wrap flex-row items-center gap-5"
                   >
-                    <Avatar></Avatar>
-                    {data.user.username}
+                    <ProfileAvatar size="4rem" src={data.user.avatarUrl} />
+                    <h1 className="text-xl">{data.user.username}</h1>
                   </Link>
                 </li>
               </ul>
             </div>
           </>
-        ) : null}
+        )}
       </section>
     </div>
   );

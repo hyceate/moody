@@ -6,6 +6,8 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import multer from 'multer';
+import { customStorage, processAvatar, upload } from './functions/multer';
 import { createServer } from 'http';
 import { createYoga } from 'graphql-yoga';
 
@@ -20,8 +22,6 @@ import {
   logout,
   checkAuth,
 } from './controllers/auth.controllers';
-import multer from 'multer';
-import { customStorage } from './functions/multer';
 
 const startGraphQLYogaServer = async () => {
   const app = express() as Application;
@@ -131,12 +131,55 @@ const startGraphQLYogaServer = async () => {
             res
               .status(200)
               .json({ filePath: `/images/${userID}/${req.file.filename}` });
-          } else return res.status(400).json({ message: 'No file uploaded' });
+          } else
+            return res
+              .status(400)
+              .json({ message: 'No file uploaded: ' + err });
         });
       }
     },
   );
+  app.post(
+    '/api/auth/upload-avatar',
+    async (req: Request & { session: CustomSessionData }, res) => {
+      if (!(req.session && req.session.user)) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      const userID = req.session.user.id;
+      const uploader = upload(userID);
 
+      uploader(req, res, async (err) => {
+        if (err) {
+          console.error('Error uploading avatar:', err);
+          return res.status(500).json({ message: 'Error uploading avatar' });
+        }
+        if (!req.file) {
+          return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        try {
+          const user = await User.findById(userID);
+          if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+          }
+          const avatarPath = await processAvatar(req.file, userID);
+
+          await user.updateAvatar('profile.webp', avatarPath);
+          const updatedUser = await User.findById(
+            userID,
+            'id username email avatarUrl',
+          );
+          return res.status(200).json({
+            status: 'success',
+            user: updatedUser,
+          });
+        } catch (error) {
+          console.error('Error processing avatar:', error);
+          return res.status(500).json({ message: 'Error processing avatar' });
+        }
+      });
+    },
+  );
   app.get('/api/auth/user', checkAuth);
   app.post('/api/auth/login', login);
   app.post('/api/auth/register', register);

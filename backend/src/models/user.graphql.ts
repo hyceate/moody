@@ -44,7 +44,6 @@ const userTypeDefs = gql`
     username: String!
     email: String!
     password: String!
-    avatarUrl: String
   }
   input UpdateInput {
     id: String!

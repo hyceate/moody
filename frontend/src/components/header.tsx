@@ -89,7 +89,7 @@ export const Header = () => {
   return (
     <>
       <header className="md:sticky top-0 flex flex-row max-md:flex-wrap items-center h-auto w-full py-4 px-2 border-b-2 bg-white z-10 gap-3">
-        <aside id="logo" className="px-2">
+        <aside id="logo" className="px-2 -mt-1">
           <h1 className="text-4xl font-black">
             <a href="/" className="hover:text-[#76ABAE] rounded">
               moody.
@@ -101,9 +101,6 @@ export const Header = () => {
           <NavLink to="/" className="hover:text-[#76ABAE]">
             home
           </NavLink>
-          {/* <NavLink to="/explore" className="hover:text-[#76ABAE]">
-            explore
-          </NavLink> */}
         </nav>
         <div id="searchWrapper" className="flex-auto w-full">
           <SearchBar />

@@ -8,6 +8,7 @@ export const fetchPinsSchema = `
       user {
         username
         id
+        avatarUrl
       }
     }
   }
@@ -18,6 +19,7 @@ query getPin($id: ID!) {
     user {
       id
       username
+      avatarUrl
     }
     id
     title
@@ -61,6 +63,8 @@ export const fetchUserPins = `
       imgPath
     }
   }`;
+
+// singular board with pins
 export const fetchBoardsByUsernameTitle = `
   query boards($username: String!, $title: String!){
     boardsByUsernameTitle(username: $username, title: $title){
@@ -75,4 +79,29 @@ export const fetchBoardsByUsernameTitle = `
       pinCount
     }
   }
+`;
+
+export const createPinMutationSchema = `
+mutation CreatePin($input: CreatePinInput!) {
+  createPin(input: $input) {
+    success
+    message
+    pin {
+      id
+      title
+      description
+      imgPath
+      tags
+      link
+    }
+  }
+}
+`;
+export const fetchBoardsForForm = `
+query GetBoardsByUser($userId: ID!) {
+boardsByUser(userId: $userId) {
+  id
+  title
+}
+}
 `;

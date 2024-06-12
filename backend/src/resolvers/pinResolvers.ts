@@ -1,7 +1,10 @@
-import { ObjectId } from 'mongoose';
+import { ObjectId, SortOrder } from 'mongoose';
 import { Pin } from '../models/pin.model';
 import { User } from '../models/user.model';
 import { Board } from '../models/board.model';
+import fs from 'fs';
+import path from 'path';
+
 interface User {
   _id: ObjectId;
   username: string;
@@ -14,7 +17,6 @@ interface Pin {
   imgPath: string;
   createdAt: Date;
   user: User;
-  savedBy: User[];
   tags: string[];
   private: boolean;
   link: string;
@@ -31,19 +33,43 @@ interface PinInput {
 }
 export const pinResolvers = {
   Query: {
-    pins: async () => {
+    pins: async (
+      _: any,
+      { sort }: { sort?: { field: keyof Pin; direction: 'ASC' | 'DESC' } },
+    ) => {
       try {
-        const pins = await Pin.find().populate('user savedBy comments.user');
+        const sortOptions: { [key: string]: SortOrder } = {};
+        if (sort) {
+          const { field, direction } = sort;
+          sortOptions[field] = direction === 'ASC' ? 1 : -1;
+        } else {
+          sortOptions.createdAt = -1;
+        }
+        const pins = await Pin.find()
+          .populate('user comments.user')
+          .sort(sortOptions);
+
         return pins;
       } catch (error) {
         throw new Error('Error fetching pins');
       }
     },
-    pinsByUser: async (_: any, { id }: { id: string }) => {
+    pinsByUser: async (
+      _: any,
+      { id }: { id: string },
+      { sort }: { sort?: { field: keyof Pin; direction: 'ASC' | 'DESC' } },
+    ) => {
       try {
-        const pinsByUser = await Pin.find({ user: id }).populate(
-          'user savedBy comments.user',
-        );
+        const sortOptions: { [key: string]: SortOrder } = {};
+        if (sort) {
+          const { field, direction } = sort;
+          sortOptions[field] = direction === 'ASC' ? 1 : -1;
+        } else {
+          sortOptions.createdAt = -1;
+        }
+        const pinsByUser = await Pin.find({ user: id })
+          .populate('user comments.user')
+          .sort(sortOptions);
         return pinsByUser;
       } catch (error) {
         console.error('Error fetching pins by user:', error);
@@ -52,9 +78,7 @@ export const pinResolvers = {
     },
     pin: async (_: any, { id }: { id: string }) => {
       try {
-        const pin = await Pin.findById(id).populate(
-          'user savedBy comments.user',
-        );
+        const pin = await Pin.findById(id).populate('user comments.user');
         if (!pin) {
           throw new Error('Pin not found');
         }
@@ -83,13 +107,11 @@ export const pinResolvers = {
           { new: true, useFindAndModify: false },
         );
         const flattenedTags = input.tags.flat();
-        // Include _id when serializing the pin object
         const serializedPin = {
           ...newPin.toObject(),
-          id: newPin._id.toString(), // Convert _id to string for serialization
+          id: newPin._id.toString(),
           tags: flattenedTags || null,
         };
-
         return {
           success: true,
           message: 'Pin created successfully',
@@ -106,9 +128,19 @@ export const pinResolvers = {
     },
     deletePin: async (_: any, { id }: { id: string }) => {
       try {
-        const pin = await Pin.findByIdAndDelete(id);
+        const pin = await Pin.findById(id);
         if (!pin) {
           throw new Error('Pin not found');
+        }
+        await Pin.findByIdAndDelete(id);
+        const imagePath = path.join(
+          __dirname,
+          `../../../frontend/public/${pin.imgPath}`,
+        );
+        try {
+          fs.unlinkSync(imagePath);
+        } catch (err) {
+          console.error(`Error deleting image ${imagePath}:`, err);
         }
         return {
           success: true,

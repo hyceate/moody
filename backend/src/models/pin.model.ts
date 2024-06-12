@@ -1,14 +1,10 @@
-import mongoose, { Schema, Document, SchemaType, Types } from 'mongoose';
-import { User } from './user.model';
-import { Board } from './board.model';
-
+import mongoose, { Schema, Types } from 'mongoose';
 interface Pin {
   title: string;
   description?: string;
   imgPath: string;
   createdAt: Date;
   user: Types.ObjectId;
-  savedBy: Types.ObjectId[];
   tags?: string[];
   private: boolean;
   link?: string;
@@ -26,12 +22,6 @@ const pinSchema: Schema<Pin> = new Schema(
       ref: 'user',
       required: true,
     },
-    savedBy: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-      },
-    ],
     createdAt: {
       type: Date,
       default: Date.now,
@@ -91,4 +81,5 @@ const pinSchema: Schema<Pin> = new Schema(
   },
   { timestamps: true },
 );
+
 export const Pin = mongoose.model('pin', pinSchema);

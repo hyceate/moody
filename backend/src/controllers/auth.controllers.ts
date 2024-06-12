@@ -7,6 +7,7 @@ interface UserType {
   username: string;
   email: string;
   password: string;
+  avatarUrl: string;
 }
 export const register = async (req: Request, res: Response) => {
   try {
@@ -66,6 +67,7 @@ export interface CustomSessionData {
     id: string;
     username: string;
     email: string;
+    avatarUrl: string;
   };
 }
 export const login = async (
@@ -84,6 +86,7 @@ export const login = async (
       id: user.id,
       username: user.username,
       email: user.email,
+      avatarUrl: user.avatarUrl,
     };
     return res
       .status(200)

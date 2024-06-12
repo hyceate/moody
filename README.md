@@ -4,7 +4,7 @@
 
 ---
 
-Built with MERN stack - create app with vite + swc, Graphql-Yoga, graphql-request, TanStack Query, Tailwindcss, Chakra-Ui, Formik, Generouted, gestalt, nanostore + persistent atoms, axios
+Built with MERN stack - pnpm - create app with vite + swc, Graphql-Yoga, graphql-request, TanStack Query, Tailwindcss, Chakra-Ui, Formik, Generouted, gestalt, axios
 
 ---
 
@@ -38,5 +38,3 @@ Create .env file in the backend folder.
 This is what you will use to connect to 'moody' db.
 
 ---
-
-To do, saving each other's pins, following each other, deletions, editing, profile, search bar

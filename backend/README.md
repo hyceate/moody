@@ -12,7 +12,7 @@ Add an .env and use these settings that you are using for your mooody db.
 > MONGODB_ADMINUSERNAME=username  
 > MONGODB_ADMINPASSWORD=password
 
-Server is hosted on `localhost:5173`
+Server is hosted on `localhost:3000`
 
 **Docker** handles the mongodb and mongo express.
 You'll have to create an initial database, a database user to handle the database, and a initial collection.
@@ -33,7 +33,6 @@ Docker compose file creates an admin user "root" with pwd "example." In order fo
 })` will create the database owner for moody.
 
 `use moody` to initialize a non-existing database and then you must store data in it for it to be properly created.  
-For example: `db.createCollection("delete_me")`  
-Or you can use mongoexpress at localhost:8081 to create a new database.
+For example: `db.createCollection("delete_me")`
 
 Create .env file in the backend folder.

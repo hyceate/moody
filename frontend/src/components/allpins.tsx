@@ -12,6 +12,7 @@ import { Spinner } from '@chakra-ui/react';
 interface User {
   id: string;
   username: string;
+  avatarUrl: string;
 }
 interface Pins {
   id: string;
@@ -48,7 +49,6 @@ const AllPins = () => {
   useEffect(() => {
     restoreScroll();
   }, []);
-
   const BASE_URL = window.location.origin;
   useLayoutEffect(() => {
     if (data && initialLoad.current) {
@@ -71,12 +71,14 @@ const AllPins = () => {
         }
       };
       fetchDimensions();
-      setShowPins(true);
+      setTimeout(() => {
+        setShowPins(true);
+      }, 100);
     }
   }, [BASE_URL, data, isLoading]);
 
   if (error) return <div>Error: {error.message}</div>;
-  if (isLoading)
+  if (!showPins && isLoading)
     return (
       <div
         id="index-pins"
