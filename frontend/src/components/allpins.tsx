@@ -7,7 +7,6 @@ import { GridComponentWithUser } from 'components/gridItem';
 import { getImageDimensions } from 'actions/images';
 import { restoreScroll } from '@/actions/scroll';
 import './css/gestalt.css';
-import './css/transitions.css';
 import { Spinner } from '@chakra-ui/react';
 interface User {
   id: string;

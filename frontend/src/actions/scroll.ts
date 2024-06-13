@@ -18,7 +18,7 @@ export const restoreScroll = () => {
         top: scrollTop,
         behavior: 'auto',
       });
-    }, 90);
+    }, 300);
   }
   localStorage.removeItem('scrollPositionOnHome');
 };

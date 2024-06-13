@@ -30,6 +30,9 @@ const NavLink = styled(Link)`
   &:hover {
     color: #76abae;
   }
+  &:active {
+    color: #22595c;
+  }
 `;
 const ActionNavs = styled(Link)`
   font-weight: 700;
@@ -91,16 +94,17 @@ export const Header = () => {
       <header className="md:sticky top-0 flex flex-row max-md:flex-wrap items-center h-auto w-full py-4 px-2 border-b-2 bg-white z-10 gap-3">
         <aside id="logo" className="px-2 -mt-1">
           <h1 className="text-4xl font-black">
-            <a href="/" className="hover:text-[#76ABAE] rounded">
+            <Link
+              to="/"
+              className="active:text-[#22595c] hover:text-[#76ABAE] rounded"
+            >
               moody.
-            </a>
+            </Link>
           </h1>
         </aside>
 
         <nav id="left" className="text-xl font-black">
-          <NavLink to="/" className="hover:text-[#76ABAE]">
-            home
-          </NavLink>
+          <NavLink to="/">home</NavLink>
         </nav>
         <div id="searchWrapper" className="flex-auto w-full">
           <SearchBar />

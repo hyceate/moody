@@ -2,6 +2,7 @@ import { ObjectId, SortOrder } from 'mongoose';
 import { Pin } from '../models/pin.model';
 import { User } from '../models/user.model';
 import { Board } from '../models/board.model';
+import { Comment } from '../models/comment.model';
 import fs from 'fs';
 import path from 'path';
 
@@ -20,7 +21,7 @@ interface Pin {
   tags: string[];
   private: boolean;
   link: string;
-  comments: { user: User; comment: string; commentTime: Date }[];
+  comments: Comment[];
 }
 interface PinInput {
   user: User;
@@ -45,9 +46,7 @@ export const pinResolvers = {
         } else {
           sortOptions.createdAt = -1;
         }
-        const pins = await Pin.find()
-          .populate('user comments.user')
-          .sort(sortOptions);
+        const pins = await Pin.find().populate('user').sort(sortOptions);
 
         return pins;
       } catch (error) {
@@ -132,6 +131,7 @@ export const pinResolvers = {
         if (!pin) {
           throw new Error('Pin not found');
         }
+        await Board.updateMany({ pins: id }, { $pull: { pins: id } });
         await Pin.findByIdAndDelete(id);
         const imagePath = path.join(
           __dirname,
@@ -152,6 +152,28 @@ export const pinResolvers = {
           message: (error as Error).message,
         };
       }
+    },
+    createComment: async (
+      _: any,
+      {
+        userId,
+        pinId,
+        commentText,
+      }: { userId: string; pinId: string; commentText: string },
+    ) => {
+      const newComment = new Comment({
+        user: userId,
+        comment: commentText,
+        commentTime: new Date(),
+      });
+      await newComment.save();
+      await Pin.findByIdAndUpdate(pinId, {
+        $push: { comments: newComment._id },
+      });
+      return {
+        success: true,
+        message: 'Comment saved',
+      };
     },
   },
 };

@@ -130,6 +130,6 @@ export const checkAuth = (
   if (req.session && req.session.user) {
     res.json({ user: req.session.user });
   } else {
-    res.status(401).end();
+    res.end();
   }
 };

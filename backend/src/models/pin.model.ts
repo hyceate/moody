@@ -50,22 +50,8 @@ const pinSchema: Schema<Pin> = new Schema(
     },
     comments: [
       {
-        user: {
-          type: Schema.Types.ObjectId,
-          ref: 'user',
-          required: true,
-          trim: true,
-        },
-        comment: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        commentTime: {
-          type: Date,
-          required: true,
-          trim: true,
-        },
+        type: Schema.Types.ObjectId,
+        ref: 'comment',
       },
     ],
     tags: [
@@ -81,5 +67,7 @@ const pinSchema: Schema<Pin> = new Schema(
   },
   { timestamps: true },
 );
-
+pinSchema.index({ user: 1 });
+pinSchema.index({ createdAt: -1 });
+pinSchema.index({ tags: 1 });
 export const Pin = mongoose.model('pin', pinSchema);

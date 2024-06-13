@@ -7,9 +7,10 @@ const pinTypeDefs = gql`
     email: String
   }
   type Comment {
-    user: User! # Ref to the comment poster
-    comment: String! # The content of the comment
-    commentTime: String! # Timestamp of the comment
+    id: ID!
+    user: User!
+    comment: String!
+    commentTime: String
   }
 
   type Pin {
@@ -18,11 +19,11 @@ const pinTypeDefs = gql`
     description: String
     imgPath: String
     createdAt: String
-    user: User # Reference to the owner of the pin
-    tags: [String!] # Array of tags
+    user: User
+    tags: [String!]
     private: Boolean
     link: String
-    comments: [Comment!] # Array of comments on the pin
+    comments: [Comment!]
     board: [String!]
   }
   input PinsSortInput {
@@ -49,9 +50,15 @@ const pinTypeDefs = gql`
     success: Boolean!
     message: String!
   }
+  type CreateCommentResponse {
+    success: Boolean!
+    message: String!
+    comment: Comment
+  }
   type Mutation {
     createPin(input: CreatePinInput!): CreatePinResponse!
     deletePin(id: ID!): DeletePinResponse!
+    createComment(input: CreateCommentInput!): CreateCommentResponse!
   }
 
   input CreatePinInput {
@@ -63,6 +70,11 @@ const pinTypeDefs = gql`
     private: Boolean! = false
     link: String
     board: [String!] = default
+  }
+  input CreateCommentInput {
+    user: ID!
+    comment: String!
+    pin: ID!
   }
 `;
 

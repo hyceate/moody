@@ -3,11 +3,9 @@ export const fetchPinsSchema = `
     pins {
       id
       title
-      description
       imgPath
       user {
         username
-        id
         avatarUrl
       }
     }
@@ -26,6 +24,14 @@ query getPin($id: ID!) {
     description
     link
     imgPath
+    comments{
+      user{
+        id
+        username
+      }
+      comment
+      commentTime
+    }
   }
 }
 `;
@@ -57,9 +63,6 @@ export const fetchUserPins = `
   query getPinsByUser($id: ID!) {
     pinsByUser(id: $id) {
       id
-      title
-      description
-      link
       imgPath
     }
   }`;

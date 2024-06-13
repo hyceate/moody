@@ -44,18 +44,16 @@ const boardSchema: Schema<Board> = new Schema(
       ], // array of pins
     },
   },
-  { timestamps: true, toObject: { virtuals: true } },
+  {
+    timestamps: true,
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true },
+  },
 );
 
 boardSchema.virtual('pinCount').get(function (this: { pins: any[] }): number {
   return this.pins.length;
 });
-// Ensure virtual fields are included when converting to JSON
-boardSchema.set('toJSON', {
-  virtuals: true,
-});
-// Ensure virtual fields are included when converting to Object
-boardSchema.set('toObject', {
-  virtuals: true,
-});
+boardSchema.index({ user: 1 });
+boardSchema.index({ title: 1 });
 export const Board = mongoose.model('board', boardSchema);

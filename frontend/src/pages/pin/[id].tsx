@@ -22,6 +22,7 @@ interface Pin {
   link: string;
   imgPath: string;
   user: User;
+  comments: [string];
 }
 interface DeleteResponse {
   deletePin: {
@@ -75,19 +76,18 @@ export default function Pin() {
       img.onload = () => {
         const aspectRatio = img.width / img.height;
         const container = imageContainerRef.current;
-
         if (container) {
           container.classList.remove(
             'portrait-image',
             'landscape-image',
             'square-image',
           );
-
-          if (aspectRatio < 1) {
+          if (aspectRatio < 0.8) {
             // Portrait
             container.style.padding = '0';
             container.style.borderRadius = '16px';
             container.classList.add('portrait-image');
+            container.style.paddingBottom = `0`;
           } else if (aspectRatio > 1) {
             // Landscape
             container.style.padding = '20px';
@@ -97,6 +97,7 @@ export default function Pin() {
             if (image) {
               image.style.borderRadius = container.style.borderRadius;
             }
+            container.style.paddingBottom = `${(1 / aspectRatio) * 100}%`;
           } else {
             // Square
             container.style.padding = '15px';
@@ -106,8 +107,8 @@ export default function Pin() {
             if (image) {
               image.style.borderRadius = container.style.borderRadius;
             }
+            container.style.paddingBottom = `${(1 / aspectRatio) * 100}%`;
           }
-          container.style.paddingBottom = `${(1 / aspectRatio) * 100}%`;
         }
       };
     }
@@ -136,102 +137,153 @@ export default function Pin() {
           <>
             <div
               id="closeup"
-              className="flex flex-auto w-full max-w-[508px] justify-center items-center relative rounded-[32px_0_0_32px]"
+              className="flex flex-auto w-full max-w-[508px] max-h-[716px] justify-center items-center relative rounded-[32px_0_0_32px]"
             >
               <div
                 id="image-container"
-                className="h-auto w-full rounded-[1rem]"
-                ref={imageContainerRef}
-                style={{ paddingBottom: '150%' }}
+                className="self-start h-full w-full rounded-[1rem]"
               >
-                <div id="closeup-image" className="w-full h-auto relative">
+                <div
+                  id="closeup-image"
+                  className="w-full max-w-[508px] relative"
+                  ref={imageContainerRef}
+                >
                   <img
                     src={data?.imgPath}
-                    className="absolute  w-full h-auto top-0 left-0"
-                    loading="lazy"
+                    className="w-full max-h-[44.8rem] object-contain"
+                    loading="eager"
                     alt={data?.title || data?.description || 'Image'}
                   />
                 </div>
               </div>
             </div>
+
             <div
               id="pin_details"
-              className="flex flex-1 w-full max-h-[740px] px-5 max-w-[508px]"
+              className="flex flex-col flex-auto w-full max-w-[508px]"
+              style={{ maxHeight: 'calc(-96px + 100dvh)' }}
             >
-              <ul className="flex flex-col pt-5 max-h-[740px] overflow-scroll">
-                <li className="w-full pt-3 text-xl">
-                  <Menu>
-                    <MenuButton as={Button} padding="0" margin="0">
-                      <div className="text-3xl p-0 mb-3">...</div>
-                    </MenuButton>
-                    <MenuList>
-                      {data && isAuthenticated && data.user.id === user?.id && (
+              <ul className="flex flex-col overflow-scroll gap-8 w-full h-full px-5">
+                <li className="flex flex-row justify-between items-center w-full text-xl sticky top-0 bg-white pt-[3rem] z-10">
+                  <div className="pb-2 bg-white">
+                    <Menu>
+                      <MenuButton as={Button} padding="0" margin="0">
+                        <div className="text-3xl p-0 mb-3">...</div>
+                      </MenuButton>
+                      <MenuList>
+                        {data &&
+                          isAuthenticated &&
+                          data.user.id === user?.id && (
+                            <MenuItem>
+                              <span>Edit Pin</span>
+                              <EditIcon ml="5px" />
+                            </MenuItem>
+                          )}
                         <MenuItem>
-                          <span>Edit Pin</span>
-                          <EditIcon ml="5px" />
+                          <a href={`${data.imgPath}`} download>
+                            Download Image
+                          </a>
                         </MenuItem>
-                      )}
-                      <MenuItem>
-                        <a href={`${data.imgPath}`} download>
-                          Download Image
-                        </a>
-                      </MenuItem>
-                      {data && isAuthenticated && data.user.id === user?.id && (
-                        <MenuItem
-                          as={Button}
-                          justifyContent="start"
-                          bg="actions.pink.50"
-                          color="white"
-                          _hover={{
-                            background: 'actions.pink.100',
-                          }}
-                          onClick={() => handleDelete()}
-                        >
-                          Delete Pin
-                        </MenuItem>
-                      )}
-                    </MenuList>
-                  </Menu>
+                        {data &&
+                          isAuthenticated &&
+                          data.user.id === user?.id && (
+                            <MenuItem
+                              as={Button}
+                              justifyContent="start"
+                              bg="actions.pink.50"
+                              color="white"
+                              _hover={{
+                                background: 'actions.pink.100',
+                              }}
+                              onClick={() => handleDelete()}
+                            >
+                              Delete Pin
+                            </MenuItem>
+                          )}
+                      </MenuList>
+                    </Menu>
+                  </div>
                 </li>
-
-                <li id="pinLink" className="my-5">
+                <li className="flex flex-col flex-auto gap-8 h-full -mt-2">
                   {data?.link && (
-                    <a
-                      href={`${data.link}`}
-                      className="flex underline underline-offset-4 min-w-0"
+                    <div id="pinLink" className="">
+                      <a
+                        href={`${data.link}`}
+                        className="flex underline underline-offset-4 min-w-0"
+                      >
+                        <ExternalLinkIcon boxSize={6} marginInline={1} />
+                        <h1 className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                          {data.link}
+                        </h1>
+                      </a>
+                    </div>
+                  )}
+                  <div id="pin_desc" className="pr-2 empty:hidden">
+                    {data?.title && (
+                      <div id="pinTitle" className="">
+                        <h1 className="text-4xl font-bold">{data.title}</h1>
+                      </div>
+                    )}
+                    {data?.description && (
+                      <div id="pinDesc" className="">
+                        <p className="text-lg text-balance">
+                          {data.description}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap flex-row items-center gap-5">
+                    <Link
+                      to={`/profile/${data.user.username}`}
+                      className="flex flex-wrap flex-row items-center gap-5"
                     >
-                      <ExternalLinkIcon boxSize={6} marginInline={1} />
-                      <h1 className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                        {data.link}
-                      </h1>
-                    </a>
-                  )}
-                </li>
-
-                <li id="pinTitle" className="mb-5">
-                  {data?.title && (
-                    <h1 className="text-4xl font-bold">{data.title}</h1>
-                  )}
-                </li>
-
-                <li id="pinDesc" className="">
-                  {data?.description && (
-                    <p className="text-2xl pr-2 text-balance">
-                      {data.description}
-                    </p>
-                  )}
-                </li>
-
-                <li className="flex flex-wrap flex-row items-center gap-5 py-5">
-                  <Link
-                    to={`/profile/${data.user.username}`}
-                    className="flex flex-wrap flex-row items-center gap-5"
-                  >
-                    <ProfileAvatar size="4rem" src={data.user.avatarUrl} />
-                    <h1 className="text-xl">{data.user.username}</h1>
-                  </Link>
+                      <ProfileAvatar size="4rem" src={data.user.avatarUrl} />
+                      <h1 className="text-xl">{data.user.username}</h1>
+                    </Link>
+                  </div>
+                  <div className="">
+                    <h1 className="text-xl font-medium">Comments</h1>
+                    {data.comments.length < 1 && (
+                      <div className="my-5">No Comments yet!</div>
+                    )}
+                  </div>
                 </li>
               </ul>
+              <div className="z-10 sticky bottom-0 bg-white py-5 px-5 border border-x-0 border-y-1 border-bottom-0 border-slate-300">
+                <form className="max-w-full px-1">
+                  <label htmlFor="comment" className="text-xl font-medium">
+                    What do you think?
+                  </label>
+                  <div className="flex flex-row items-stretch outline outline-1 outline-slate-300 p-2 rounded-[24px] focus-within:outline-slate-500 mt-3">
+                    <div className="py-2 px-2 h-auto text-wrap break-words whitespace-pre-wrap -z-10 w-full select-none overflow-hidden"></div>
+                    <textarea
+                      id="comment"
+                      name="comment"
+                      className="-ml-[80%] flex-grow py-2 pr-2 h-auto resize-none w-full text-wrap break-words whitespace-pre-wrap outline-none overflow-hidden"
+                      rows={1}
+                      minLength={3}
+                      maxLength={250}
+                      onInput={(event) => {
+                        const textarea = event.target as HTMLTextAreaElement;
+                        const divElement =
+                          textarea.previousElementSibling as HTMLDivElement;
+                        if (divElement) {
+                          divElement.innerText = textarea.value + '\n';
+                        }
+                      }}
+                      placeholder="Add a Comment"
+                    ></textarea>
+                    <div className="right-0 top-0 bottom-0 flex items-center">
+                      <button
+                        type="submit"
+                        className="bg-rose-500 text-white font-bold rounded-lg p-2 mr-3 "
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
             </div>
           </>
         )}

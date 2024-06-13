@@ -20,7 +20,7 @@ import request from 'graphql-request';
 import { fetchData } from '../../query/fetch';
 import './upload.css';
 import { useAuth } from '../../context/authContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { createPinMutationSchema, fetchBoardsForForm } from 'query/queries';
 import { ProfileAvatar } from '@/components/avatar';
 interface PinDetails {
@@ -99,6 +99,7 @@ export default function Upload() {
       throw error;
     }
   };
+  const navigate = useNavigate();
   const createPinMutation = useMutation({
     mutationFn: async (input) => {
       const endpoint = 'http://localhost:3000/api/graphql';
@@ -113,6 +114,9 @@ export default function Upload() {
     },
     onSuccess: (data) => {
       console.log('Mutation successful:', data.createPin.pin);
+      setTimeout(() => {
+        navigate(`/pin/${data.createPin.pin.id}`);
+      }, 3000);
     },
     onError: (error) => {
       console.error('Mutation error:', error);
@@ -185,7 +189,6 @@ export default function Upload() {
         tags,
         imgPath,
       };
-      // console.log(input);
       // @ts-expect-error input
       await createPinMutation.mutateAsync(input);
     } catch (error) {
@@ -203,7 +206,7 @@ export default function Upload() {
     }
     document.title = 'Upload a Pin to moody.';
   }, [hasFetched, refetch]);
-  console.log(pinDetails);
+
   if (!isAuthenticated)
     return (
       <>
@@ -260,6 +263,7 @@ export default function Upload() {
                 _hover={{
                   background: 'actions.pink.100',
                 }}
+                isLoading={createPinMutation.isSuccess}
               >
                 Save Pin
               </Button>
@@ -270,7 +274,7 @@ export default function Upload() {
             className="flex flex-row flex-wrap justify-center gap-10 "
           >
             {/* image */}
-            <aside className="flex flex-auto justify-center min-w-[271px] max-h-[508px] max-w-[25rem] relative">
+            <aside className="flex flex-auto justify-center min-w-[271px] max-h-[508px] max-w-[23rem] relative">
               {showLabel && !showImagePin ? (
                 <div className="flex flex-1 relative">
                   <FormLabel
@@ -330,7 +334,7 @@ export default function Upload() {
               />
             </aside>
             {/* pin details */}
-            <div className="m-2 max-w-[31.75rem]">
+            <div className="m-2 w-full max-w-[31.75rem]">
               <ul
                 id="form_pin_details"
                 className="flex flex-col flex-auto w-full"

@@ -2,8 +2,8 @@ import { Box, Flex, Image as Img } from 'gestalt';
 import { Link } from 'react-router-dom';
 import { handleSaveScrollPos } from '@/actions/scroll';
 import './css/gestalt.css';
-import './css/transitions.css';
 import { ProfileAvatar } from './avatar';
+
 interface User {
   id: string;
   username: string;
@@ -19,6 +19,7 @@ interface Pins {
   imgPath: string;
   user: User;
 }
+
 export const GridComponent = ({
   data,
   showPins,
@@ -30,8 +31,8 @@ export const GridComponent = ({
     <div className={`fadeIn ${showPins ? 'loaded' : ''}`}>
       <Box rounding={8} marginBottom={3}>
         <Flex direction="column">
-          <Flex.Item dataTestId={data.id}>
-            <div key={data.id}>
+          <Flex.Item>
+            <div className={`fadeIn ${showPins ? 'loaded' : ''}`}>
               <Link to={`/pin/${data.id}`} onClick={handleSaveScrollPos}>
                 {data.dimensions && (
                   <Box rounding={5} overflow="hidden">
@@ -62,8 +63,8 @@ export const GridComponentWithUser = ({
     <div className={`fadeIn ${showPins ? 'loaded' : ''}`}>
       <Box rounding={8} marginBottom={3}>
         <Flex direction="column">
-          <Flex.Item dataTestId={data.id}>
-            <div key={data.id} className={`fadeIn ${showPins ? 'loaded' : ''}`}>
+          <Flex.Item>
+            <div>
               <Link to={`/pin/${data.id}`} onClick={handleSaveScrollPos}>
                 {data.dimensions && (
                   <Box rounding={5} overflow="hidden">
