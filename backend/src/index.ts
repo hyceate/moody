@@ -7,7 +7,12 @@ import bodyParser from 'body-parser';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import multer from 'multer';
-import { customStorage, processAvatar, upload } from './functions/multer';
+import {
+  processAvatar,
+  processUploadedFile,
+  upload,
+  uploadPin,
+} from './functions/multer';
 import { createServer } from 'http';
 import { createYoga } from 'graphql-yoga';
 
@@ -115,30 +120,50 @@ const startGraphQLYogaServer = async () => {
 
   interface CustomSessionData {
     user?: {
+      avatarUrl: string;
       id: string;
       username: string;
     };
   }
   app.post(
     '/api/auth/upload',
-    (req: Request & { session: CustomSessionData }, res) => {
-      if (req.session && req.session.user) {
-        const userID = req.session.user.id;
-        const upload = multer({ storage: customStorage(userID) });
+    async (req: Request & { session: CustomSessionData }, res: Response) => {
+      try {
+        // Check if user is authenticated
+        if (!(req.session && req.session.user)) {
+          return res.status(401).json({ message: 'Unauthorized' });
+        }
+        const userId = req.session.user.id;
 
-        upload.single('imgFile')(req, res, (err) => {
-          if (req.file) {
-            res
-              .status(200)
-              .json({ filePath: `/images/${userID}/${req.file.filename}` });
-          } else
-            return res
-              .status(400)
-              .json({ message: 'No file uploaded: ' + err });
+        const upload = uploadPin(userId).single('imgFile');
+        upload(req, res, async (err: any) => {
+          if (err) {
+            console.error('Error uploading file:', err);
+            return res.status(500).json({ message: 'Error uploading file' });
+          }
+
+          if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+          }
+
+          try {
+            const fileProcessingResult = await processUploadedFile(
+              req.file,
+              userId,
+            );
+            res.status(200).json(fileProcessingResult); // Respond with processed file information
+          } catch (error) {
+            console.error('Error processing file:', error);
+            return res.status(500).json({ message: 'Error processing file' });
+          }
         });
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        return res.status(500).json({ message: 'Unexpected error' });
       }
     },
   );
+
   app.post(
     '/api/auth/upload-avatar',
     async (req: Request & { session: CustomSessionData }, res) => {
@@ -169,6 +194,9 @@ const startGraphQLYogaServer = async () => {
             userID,
             'id username email avatarUrl',
           );
+          if (updatedUser && req.session.user) {
+            req.session.user.avatarUrl = updatedUser.avatarUrl;
+          }
           return res.status(200).json({
             status: 'success',
             user: updatedUser,

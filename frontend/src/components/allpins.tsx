@@ -4,7 +4,6 @@ import { fetchPinsSchema } from 'query/queries';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Box, Masonry } from 'gestalt';
 import { GridComponentWithUser } from 'components/gridItem';
-import { getImageDimensions } from 'actions/images';
 import { restoreScroll } from '@/actions/scroll';
 import './css/gestalt.css';
 import { Spinner } from '@chakra-ui/react';
@@ -37,6 +36,7 @@ const AllPins = () => {
       try {
         const endpoint = 'http://localhost:3000/api/graphql';
         const response: PinsResponse = await request(endpoint, fetchPinsSchema);
+        console.log(response.pins);
         return response.pins;
       } catch (error) {
         console.error('Error fetching pins:', error);
@@ -44,38 +44,23 @@ const AllPins = () => {
       }
     },
   });
-
-  useEffect(() => {
-    restoreScroll();
-  }, []);
   const BASE_URL = window.location.origin;
   useLayoutEffect(() => {
+    document.title = "moody's home";
     if (data && initialLoad.current) {
       setPins(data);
-      const fetchDimensions = async () => {
-        try {
-          const pinsWithDimensions = await Promise.all(
-            data.map(async (pin) => {
-              const fullImageUrl = `${BASE_URL}${pin.imgPath}`;
-              const dimensions = await getImageDimensions(fullImageUrl);
-              return {
-                ...pin,
-                dimensions: dimensions as { width: number; height: number },
-              };
-            }),
-          );
-          setPins(pinsWithDimensions);
-        } catch (error) {
-          console.error('Error fetching image dimensions:', error);
-        }
-      };
-      fetchDimensions();
       setTimeout(() => {
         setShowPins(true);
-      }, 100);
+      }, 250);
     }
   }, [BASE_URL, data, isLoading]);
-
+  useEffect(() => {
+    if (showPins) {
+      requestAnimationFrame(() => {
+        restoreScroll();
+      });
+    }
+  }, [showPins]);
   if (error) return <div>Error: {error.message}</div>;
   if (!showPins && isLoading)
     return (
@@ -88,6 +73,7 @@ const AllPins = () => {
         </div>
       </div>
     );
+
   return (
     <div
       id="index-pins"

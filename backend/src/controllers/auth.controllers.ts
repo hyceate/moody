@@ -86,7 +86,7 @@ export const login = async (
       id: user.id,
       username: user.username,
       email: user.email,
-      avatarUrl: user.avatarUrl,
+      avatarUrl: user.avatarUrl || '',
     };
     return res
       .status(200)

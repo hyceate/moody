@@ -88,7 +88,7 @@ export const userResolvers = {
           email,
           password,
         });
-        return { success: true, user: newUser };
+        return { success: true, user: newUser, message: 'User Created' };
       } catch (error) {
         return {
           success: false,

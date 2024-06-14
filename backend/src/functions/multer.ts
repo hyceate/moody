@@ -2,28 +2,81 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-export const customStorage = (userId: string) =>
+
+const customStorage = (userId: string) =>
   multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: async (req, file, cb) => {
       const uploadPath = path.join(
         __dirname,
         `../../../frontend/public/images/${userId}`,
       );
 
       try {
-        fs.mkdirSync(uploadPath, { recursive: true });
-        cb(null, uploadPath);
-      } catch (err) {
+        await fs.promises.mkdir(uploadPath, { recursive: true });
+        cb(null, uploadPath); // Provide callback function with null error and destination path
+      } catch (err: any) {
         console.error('Error creating upload directory:', err);
-        cb(err as Error, uploadPath);
+        cb(null, err); // Provide callback function with error
       }
     },
-    filename: (req, file, cb) => {
-      cb(null, `${Date.now()}-${file.originalname}`);
+    filename: async (req, file, cb) => {
+      const uuid = crypto.randomUUID();
+      const filename = `${Date.now()}-${uuid}`;
+      cb(null, filename);
     },
   });
 
-export const profileAvatarStorage = (userId: string) => {
+export const uploadPin = (userId: string) => {
+  return multer({
+    storage: customStorage(userId),
+    fileFilter: (req, file, cb) => {
+      const validMimeTypes = ['image/jpeg', 'image/png'];
+      if (validMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only JPEG and PNG are allowed.'));
+      }
+    },
+  });
+};
+export const processUploadedFile = async (
+  file: Express.Multer.File,
+  userId: string,
+) => {
+  const inputPath = file.path;
+  const tempOutputPath = `${inputPath}.temp`;
+  const outputPath = path.join(
+    __dirname,
+    `../../../frontend/public/images/${userId}`,
+    `${Date.now()}-${crypto.randomUUID()}.webp`,
+  );
+
+  try {
+    const processedImage = await sharp(inputPath)
+      .resize({
+        width: 508,
+        fit: sharp.fit.inside,
+        withoutEnlargement: true,
+      })
+      .toFormat('webp')
+      .toFile(tempOutputPath);
+    await fs.promises.rename(tempOutputPath, outputPath);
+
+    // Clean up original file
+    await fs.promises.unlink(inputPath);
+    console.log(processedImage);
+    return {
+      filePath: `/images/${userId}/${path.basename(outputPath)}`,
+      imgWidth: processedImage.width,
+      imgHeight: processedImage.height,
+    };
+  } catch (err) {
+    console.error('Error processing and saving image:', err);
+    throw err; // Throw error to handle in caller function
+  }
+};
+
+const profileAvatarStorage = (userId: string) => {
   return multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadPath = path.join(
@@ -76,7 +129,7 @@ export const processAvatar = async (file: any, userId: string) => {
         width: 300,
         height: 300,
         fit: sharp.fit.cover,
-        position: sharp.strategy.entropy,
+        position: sharp.strategy.attention,
       })
       .toFormat('webp')
       .toFile(tempOutputPath);

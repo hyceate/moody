@@ -1,24 +1,9 @@
 import { Box, Flex, Image as Img } from 'gestalt';
 import { Link } from 'react-router-dom';
 import { handleSaveScrollPos } from '@/actions/scroll';
+import { Pin as Pins } from '@/@types/interfaces';
 import './css/gestalt.css';
 import { ProfileAvatar } from './avatar';
-
-interface User {
-  id: string;
-  username: string;
-  avatarUrl: string;
-}
-interface Pins {
-  dimensions: { width: number; height: number };
-  slice: any;
-  id: string;
-  title: string;
-  description: string;
-  link: string;
-  imgPath: string;
-  user: User;
-}
 
 export const GridComponent = ({
   data,
@@ -28,19 +13,21 @@ export const GridComponent = ({
   showPins: boolean;
 }) => {
   return (
-    <div className={`fadeIn ${showPins ? 'loaded' : ''}`}>
+    <div
+      className={`fadeIn ${showPins ? 'loaded' : ''}  will-change-transform`}
+    >
       <Box rounding={8} marginBottom={3}>
         <Flex direction="column">
           <Flex.Item>
-            <div className={`fadeIn ${showPins ? 'loaded' : ''}`}>
+            <div>
               <Link to={`/pin/${data.id}`} onClick={handleSaveScrollPos}>
-                {data.dimensions && (
+                {data && (
                   <Box rounding={5} overflow="hidden">
                     <Img
                       src={data.imgPath}
                       alt={data.title || data.description || 'Image'}
-                      naturalWidth={data.dimensions?.width}
-                      naturalHeight={data.dimensions?.height}
+                      naturalWidth={data.imgWidth}
+                      naturalHeight={data.imgHeight}
                     />
                   </Box>
                 )}
@@ -60,19 +47,19 @@ export const GridComponentWithUser = ({
   showPins: boolean;
 }) => {
   return (
-    <div className={`fadeIn ${showPins ? 'loaded' : ''}`}>
+    <div className={`fadeIn ${showPins ? 'loaded' : ''} will-change-transform`}>
       <Box rounding={8} marginBottom={3}>
         <Flex direction="column">
           <Flex.Item>
             <div>
               <Link to={`/pin/${data.id}`} onClick={handleSaveScrollPos}>
-                {data.dimensions && (
+                {data && (
                   <Box rounding={5} overflow="hidden">
                     <Img
                       src={data.imgPath}
                       alt={data.title || data.description || 'Image'}
-                      naturalWidth={data.dimensions?.width}
-                      naturalHeight={data.dimensions?.height}
+                      naturalWidth={data.imgWidth}
+                      naturalHeight={data.imgHeight}
                     />
                   </Box>
                 )}

@@ -7,6 +7,7 @@ import {
   Select,
   Textarea,
   Button,
+  Spinner,
 } from '@chakra-ui/react';
 import {
   ArrowUpIcon,
@@ -23,6 +24,7 @@ import { useAuth } from '../../context/authContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { createPinMutationSchema, fetchBoardsForForm } from 'query/queries';
 import { ProfileAvatar } from '@/components/avatar';
+
 interface PinDetails {
   createPin: {
     pin: {
@@ -30,6 +32,8 @@ interface PinDetails {
       board: string;
       title: string | null;
       imgPath: string;
+      imgWidth: number;
+      imgHeight: number;
       link: string | null;
       tags: [string];
       private: boolean;
@@ -49,6 +53,8 @@ export default function Upload() {
     description: '',
     link: '',
     img_blob: '',
+    imgWidth: 0,
+    imgHeight: 0,
     private: 'false',
   });
 
@@ -71,7 +77,7 @@ export default function Upload() {
       fetchData<{ boardsByUser: Board[] }>(endpoint, fetchBoardsForForm, {
         userId,
       }).then((data) => data.boardsByUser),
-    enabled: false, // Do not fetch on mount
+    enabled: false,
   });
   const uploadImage = async (file: any, userId: any) => {
     try {
@@ -86,10 +92,10 @@ export default function Upload() {
             'Content-Type': 'multipart/form-data',
           },
           withCredentials: true,
-          timeout: 5000,
+          timeout: 3000,
         },
       );
-      return response.data.filePath;
+      return response.data;
     } catch (error) {
       console.error(
         'Error uploading image:',
@@ -178,7 +184,11 @@ export default function Upload() {
   };
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const imgPath = await uploadImage(imageFile, pinDetails.user);
+    const { filePath, imgWidth, imgHeight } = await uploadImage(
+      imageFile,
+      pinDetails.user,
+    );
+    const imgPath = filePath;
     try {
       const input = {
         user: pinDetails.user,
@@ -188,6 +198,8 @@ export default function Upload() {
         board: pinDetails.board,
         tags,
         imgPath,
+        imgWidth,
+        imgHeight,
       };
       // @ts-expect-error input
       await createPinMutation.mutateAsync(input);
@@ -250,6 +262,11 @@ export default function Upload() {
                 <option value="" className="p-5 m-6">
                   Choose a board
                 </option>
+                {!data && (
+                  <option>
+                    <Spinner size="xl" />
+                  </option>
+                )}
                 {data?.map((board: { id: string; title: string }) => (
                   <option key={board.id} value={board.id}>
                     {board.title}

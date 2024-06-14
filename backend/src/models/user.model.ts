@@ -7,7 +7,9 @@ interface User {
   username: string;
   email: string;
   password: string;
-  avatarUrl?: string;
+  avatarUrl: string | '';
+  followers: Schema.Types.ObjectId[];
+  following: Schema.Types.ObjectId[];
   comparePassword(password: string): Promise<boolean>;
   updateAvatar(filename: string, path: string): Promise<void>;
 }
@@ -35,6 +37,18 @@ const userSchema: Schema<User> = new Schema(
     avatarUrl: {
       type: String,
     },
+    followers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    following: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   { collection: 'users', timestamps: true },
 );
@@ -50,7 +64,7 @@ userSchema.pre('save', async function (next) {
       // Create a new board for the user
       const board = new Board({
         user: this._id,
-        title: 'Default',
+        title: 'All Pins',
         description: 'This is your default board',
         followers: [],
         pins: [],

@@ -3,6 +3,8 @@ interface Pin {
   title: string;
   description?: string;
   imgPath: string;
+  imgWidth: number;
+  imgHeight: number;
   createdAt: Date;
   user: Types.ObjectId;
   tags?: string[];
@@ -41,6 +43,16 @@ const pinSchema: Schema<Pin> = new Schema(
     },
     imgPath: {
       type: String,
+      required: true,
+      trim: true,
+    },
+    imgWidth: {
+      type: Number,
+      required: true,
+      trim: true,
+    },
+    imgHeight: {
+      type: Number,
       required: true,
       trim: true,
     },

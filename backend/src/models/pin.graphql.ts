@@ -18,6 +18,8 @@ const pinTypeDefs = gql`
     title: String
     description: String
     imgPath: String
+    imgWidth: Int
+    imgHeight: Int
     createdAt: String
     user: User
     tags: [String!]
@@ -66,6 +68,8 @@ const pinTypeDefs = gql`
     title: String!
     description: String
     imgPath: String!
+    imgWidth: Int!
+    imgHeight: Int!
     tags: [String!]
     private: Boolean! = false
     link: String

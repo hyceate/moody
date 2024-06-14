@@ -16,6 +16,8 @@ interface Pin {
   title: string;
   description: string;
   imgPath: string;
+  imgWidth: string;
+  imgHeight: string;
   createdAt: Date;
   user: User;
   tags: string[];

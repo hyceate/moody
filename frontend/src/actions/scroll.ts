@@ -16,11 +16,11 @@ export const restoreScroll = () => {
       window.scrollTo({
         left: scrollLeft,
         top: scrollTop,
-        behavior: 'auto',
+        behavior: 'instant',
       });
-    }, 300);
+    }, 0);
   }
-  localStorage.removeItem('scrollPositionOnHome');
+  // localStorage.removeItem('scrollPositionOnHome');
 };
 export const handleSaveScrollPos = () => {
   localStorage.setItem(

@@ -4,6 +4,8 @@ export const fetchPinsSchema = `
       id
       title
       imgPath
+      imgWidth
+      imgHeight
       user {
         username
         avatarUrl
@@ -24,6 +26,8 @@ query getPin($id: ID!) {
     description
     link
     imgPath
+    imgWidth
+    imgHeight
     comments{
       user{
         id
@@ -54,6 +58,8 @@ export const fetchUserBoards = `
         title
         description
         imgPath
+        imgWidth
+        imgHeight
       }
       pinCount
     }
@@ -64,6 +70,8 @@ export const fetchUserPins = `
     pinsByUser(id: $id) {
       id
       imgPath
+      imgWidth
+      imgHeight
     }
   }`;
 
@@ -78,6 +86,8 @@ export const fetchBoardsByUsernameTitle = `
         title
         description
         imgPath
+        imgWidth
+        imgHeight
       }
       pinCount
     }
@@ -94,6 +104,8 @@ mutation CreatePin($input: CreatePinInput!) {
       title
       description
       imgPath
+      imgWidth
+      imgHeight
       tags
       link
     }

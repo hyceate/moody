@@ -6,31 +6,10 @@ import { fetchData } from 'query/fetch';
 import { fetchBoardsByUsernameTitle } from 'query/queries';
 import { useEffect, useRef, useState } from 'react';
 import { GridComponent } from 'components/gridItem';
-import { getImageDimensions } from 'actions/images';
 import 'components/css/gestalt.css';
 import { ProfileAvatar } from '@/components/avatar';
 import { useAuth } from '@/context/authContext';
-interface User {
-  id: string;
-  username: string;
-  avatarUrl: string;
-}
-interface Pin {
-  id: string;
-  title: string;
-  description: string;
-  link: string;
-  imgPath: string;
-  user: User;
-}
-interface Board {
-  id: string;
-  title: string;
-  description: string;
-  private: boolean;
-  pins: Pin[];
-  pinCount: number;
-}
+import { Pin, Board } from '@/@types/interfaces';
 
 const endpoint = 'http://localhost:3000/api/graphql';
 const useBoardData = (username: string, title: string) => {
@@ -63,25 +42,8 @@ export default function SingleBoard() {
   const BASE_URL = window.location.origin;
   useEffect(() => {
     if (boardData && boardData.length > 0 && !showPins) {
-      const fetchDimensions = async () => {
-        try {
-          const pinsWithDimensions = await Promise.all(
-            boardData[0].pins.map(async (pin) => {
-              const fullImageUrl = `${BASE_URL}${pin.imgPath}`;
-              const dimensions = await getImageDimensions(fullImageUrl);
-              return {
-                ...pin,
-                dimensions: dimensions as { width: number; height: number },
-              };
-            }),
-          );
-          setPins(pinsWithDimensions);
-          setShowPins(true);
-        } catch (error) {
-          console.error('Error fetching image dimensions:', error);
-        }
-      };
-      fetchDimensions();
+      setPins(boardData[0].pins);
+      setShowPins(true);
     }
   }, [BASE_URL, boardData, showPins]);
   if (!username || !title) {
@@ -109,13 +71,13 @@ export default function SingleBoard() {
           </Link>
         </p>
       </div>
-      <Box id="masonry-container" width="100%" height="100%" paddingX={10}>
+      <Box id="masonry-container" width="100%" height="100%" paddingX={0}>
         {boardData && boardData.length > 0 ? (
           <Masonry
-            columnWidth={150}
+            columnWidth={300}
             gutterWidth={20}
             items={pins}
-            layout="basicCentered"
+            layout="flexible"
             minCols={1}
             renderItem={({ data }) => (
               <GridComponent data={data} showPins={showPins} />

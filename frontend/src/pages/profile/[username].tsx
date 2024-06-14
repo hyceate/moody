@@ -112,10 +112,8 @@ export default function Profile() {
     }
   }, [BASE_URL, pinsData.data]);
   useEffect(() => {
+    document.title = `${username}'s profile`;
     restoreScroll();
-  }, []);
-  useEffect(() => {
-    document.title = `${username}'s Profile`;
   }, [username]);
   useEffect(() => {
     if (!location.hash) {
@@ -125,6 +123,7 @@ export default function Profile() {
   if (!username) {
     return <div>Invalid parameters</div>;
   }
+
   return (
     <div id="profile" className="flex flex-col gap-5 w-full items-center">
       <section className="flex flex-col items-center gap-2 mt-5">
