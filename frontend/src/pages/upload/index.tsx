@@ -234,7 +234,7 @@ export default function Upload() {
       </>
     );
   return (
-    <div className="mt-2 mb-2 drop-shadow-xl max-[1024px]:max-w-[508px] w-full max-w-[63.5rem]">
+    <div className="flex flex-col mt-2 mb-2 drop-shadow-xl max-[1024px]:max-w-[508px] w-full max-w-[63.5rem]">
       <form
         id="upload_pin"
         onSubmit={handleSubmit}
@@ -242,7 +242,7 @@ export default function Upload() {
       >
         <FormControl
           id="upload_form"
-          className="flex flex-col max-w-[72rem] justify-center gap-10 p-10 rounded-xl border-2"
+          className="flex flex-col flex-auto max-w-[72rem] justify-center gap-10 p-10 rounded-xl border-2"
         >
           <header className="flex flex-row w-full justify-end">
             <div className="flex w-full max-w-[20rem] gap-1">
@@ -288,10 +288,10 @@ export default function Upload() {
           </header>
           <section
             id="form_body"
-            className="flex flex-row flex-wrap justify-center gap-10 "
+            className="flex flex-row flex-wrap h-full justify-center gap-10"
           >
             {/* image */}
-            <aside className="flex flex-auto justify-center min-w-[271px] max-h-[508px] max-w-[23rem] relative">
+            <aside className="flex flex-col flex-auto justify-center min-w-[271px] max-w-[23rem] relative">
               {showLabel && !showImagePin ? (
                 <div className="flex flex-1 relative">
                   <FormLabel
@@ -317,11 +317,11 @@ export default function Upload() {
                 </div>
               ) : (
                 <>
-                  <section className="image_pin max-w-[25rem] flex flex-col relative">
+                  <section className="image_pin max-w-[31.75rem] h-auto flex flex-col flex-auto relative">
                     <img
                       src={pinDetails.img_blob}
                       alt="pin_image"
-                      className="object-contain rounded-xl "
+                      className="object-contain rounded-xl max-h-[44.75rem]"
                     />
                     <button
                       className="absolute top-0 right-0 m-2 w-[2.5rem] aspect-square cursor-pointer rounded-full bg-gray-200 hover:bg-slate-400 hover:text-white hover:outline hover:outline-black flex justify-center items-center"

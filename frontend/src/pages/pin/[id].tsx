@@ -9,21 +9,8 @@ import { ExternalLinkIcon, EditIcon } from '@chakra-ui/icons';
 import { useAuth } from '../../context/authContext';
 import { GraphQLClient } from 'graphql-request';
 import { ProfileAvatar } from '@/components/avatar';
+import { Pin as PinDeets } from '@/@types/interfaces';
 
-interface User {
-  id: string;
-  username: string;
-  avatarUrl: string;
-}
-interface Pin {
-  id: string;
-  title: string;
-  description: string;
-  link: string;
-  imgPath: string;
-  user: User;
-  comments: [string];
-}
 interface DeleteResponse {
   deletePin: {
     success: boolean;
@@ -47,10 +34,10 @@ const createGraphQLClient = () => {
 export default function Pin() {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
-  const { data, isLoading, error } = useQuery<Pin>({
+  const { data, isLoading, error } = useQuery<PinDeets>({
     queryKey: ['pinDeets', id, endpoint, fetchPinData],
     queryFn: () =>
-      fetchData<{ pin: Pin }>(endpoint, fetchPinData, { id }).then(
+      fetchData<{ pin: PinDeets }>(endpoint, fetchPinData, { id }).then(
         (data) => data.pin,
       ),
   });
@@ -73,53 +60,50 @@ export default function Pin() {
     window.scrollTo(0, 0);
   });
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const secondaryImgContainer = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (data?.imgPath && imageContainerRef.current) {
       const img = new Image();
       img.src = data.imgPath;
       img.onload = () => {
-        const aspectRatio = img.width / img.height;
+        const aspectRatio = data.imgWidth / data.imgHeight;
         const container = imageContainerRef.current;
-        if (container) {
+        const secondaryContainer = secondaryImgContainer.current;
+        if (container && secondaryContainer) {
           container.classList.remove(
             'portrait-image',
             'landscape-image',
             'square-image',
           );
-          if (aspectRatio > 0.6 && aspectRatio < 1) {
+          container.style.padding = '0';
+          if (aspectRatio > 0.7 && aspectRatio < 1) {
             // Portrait
             container.style.padding = '0';
-            container.style.borderRadius = '16px';
+            container.style.borderRadius = '0px';
             container.classList.add('portrait-image');
-            container.style.paddingBottom = `0`;
-          } else if (aspectRatio < 0.6) {
-            // portrait
-            container.style.padding = '20px';
+          } else if (aspectRatio < 0.7) {
+            // narrower portrait
+            container.style.padding = '1rem';
             container.style.borderRadius = '16px';
-            container.classList.add('narrow-image');
-            const image = container.querySelector('img');
-            if (image) {
-              image.style.borderRadius = container.style.borderRadius;
-            }
+            secondaryContainer.style.borderRadius =
+              container.style.borderRadius;
+            container.classList.add('narrow-portrait-image');
+            secondaryContainer.classList.add('self-center');
           } else if (aspectRatio > 1) {
             // Landscape
-            container.style.padding = '20px';
+            container.style.padding = '1rem';
             container.style.borderRadius = '16px';
+            secondaryContainer.style.borderRadius =
+              container.style.borderRadius;
             container.classList.add('narrow-image');
-            const image = container.querySelector('img');
-            if (image) {
-              image.style.borderRadius = container.style.borderRadius;
-            }
-          } else {
+          } else if (aspectRatio === 1) {
             // Square
             container.style.padding = '15px';
             container.style.paddingRight = '0px';
             container.style.borderRadius = '16px';
+            secondaryContainer.style.borderRadius =
+              container.style.borderRadius;
             container.classList.add('square-image');
-            const image = container.querySelector('img');
-            if (image) {
-              image.style.borderRadius = container.style.borderRadius;
-            }
           }
         }
       };
@@ -142,27 +126,27 @@ export default function Pin() {
     <div className="flex flex-1 flex-col w-full justify-center items-center px-5 max-w-[72rem] relative">
       <section
         id="pin-container"
-        className="flex flex-row flex-wrap justify-center bg-white max-[1055px]:max-w-[508px] w-full max-w-[63.5rem] h-full min-[1055px]:max-h-[44.75rem] rounded-[2rem] fadeIn mt-3 mb-5 relative"
+        className="flex flex-row flex-wrap justify-center bg-white max-[1055px]:max-w-[31.75rem] w-full max-w-[63.5rem] h-full rounded-[2rem] fadeIn mt-3 mb-5 relative"
         style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 20px 0px' }}
       >
         {!isLoading && data && (
           <>
             <div
               id="closeup"
-              className="flex flex-auto w-full max-w-[508px] h-full max-h-[44.75rem]   justify-center items-center relative rounded-[32px_0_0_32px]  overflow-hidden "
+              className="flex flex-col flex-auto w-full max-w-[31.75rem] h-full  justify-center items-center relative rounded-[32px_32px_0_0] min-[1055px]:rounded-[32px_0_0_32px] overflow-hidden"
             >
               <div
                 id="image-container"
-                className="self-start h-full w-full rounded-[2rem]"
+                className="flex flex-col flex-auto h-full w-full relative "
+                ref={imageContainerRef}
               >
                 <div
-                  id="closeup-image"
-                  className="w-full max-w-[508px] relative"
-                  ref={imageContainerRef}
+                  className="flex flex-col w-full relative"
+                  ref={secondaryImgContainer}
                 >
                   <img
                     src={data?.imgPath}
-                    className="w-full max-h-[44.9rem] object-contain"
+                    className="w-full object-contain rounded-[inherit]"
                     loading="eager"
                     alt={data?.title || data?.description || 'Image'}
                   />

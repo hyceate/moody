@@ -72,7 +72,7 @@ export const processUploadedFile = async (
     };
   } catch (err) {
     console.error('Error processing and saving image:', err);
-    throw err; // Throw error to handle in caller function
+    throw err;
   }
 };
 
