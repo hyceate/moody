@@ -19,12 +19,13 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*", "./dist/*", ""],
+      "@/*": ["./src/lib/*", "./dist/*", ""],
+      "context/*": ["src/lib/context/*"],
       "pages/*": ["src/pages/*"],
-      "actions/*": ["src/actions/*"],
-      "components/*": ["src/components/*"],
-      "query/*": ["src/query/*"],
-      "types/*": ["src/@types/*"],
+      "actions/*": ["src/lib/actions/*"],
+      "components/*": ["src/lib/components/*"],
+      "query/*": ["src/lib/query/*"],
+      "types/*": ["src/lib/@types/*"],
       "public/*": ["public/*"]
     }
   },

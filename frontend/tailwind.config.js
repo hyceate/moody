@@ -5,6 +5,7 @@ export default {
     extend: {
       colors: {
         action: '#d4455a',
+        alert_success: '#2F855A',
       },
     },
   },

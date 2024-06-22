@@ -8,40 +8,37 @@ import {
   Textarea,
   Button,
   Spinner,
+  useToast,
 } from '@chakra-ui/react';
 import {
   ArrowUpIcon,
   SmallCloseIcon,
   ChevronDownIcon,
   CloseIcon,
+  CheckCircleIcon,
 } from '@chakra-ui/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import request from 'graphql-request';
-import { fetchData } from '../../query/fetch';
+import { fetchData, endpoint } from '@/query/fetch';
 import './upload.css';
-import { useAuth } from '../../context/authContext';
+import { useAuth } from '@/context/authContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { createPinMutationSchema, fetchBoardsForForm } from 'query/queries';
+import { createPinMutationSchema, fetchBoardsForForm } from '@/query/queries';
 import { ProfileAvatar } from '@/components/avatar';
+import { Board, Pin } from '@/@types/interfaces';
 
 interface PinDetails {
   createPin: {
-    pin: {
-      id: string;
-      board: string;
-      title: string | null;
-      imgPath: string;
-      imgWidth: number;
-      imgHeight: number;
-      link: string | null;
-      tags: [string];
-      private: boolean;
-    };
+    message: string;
+    success: boolean;
+    pin: Pin;
   };
 }
 // component start
 export default function Upload() {
+  const toast = useToast();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const userId = user?.id;
   const username = user?.username;
@@ -57,20 +54,14 @@ export default function Upload() {
     imgHeight: 0,
     private: 'false',
   });
-
   const [input, setInput] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
   const [showLabel, setShowLabel] = useState(true);
   const [showImagePin, setImagePin] = useState(false);
   const [isKeyReleased, setIsKeyReleased] = useState(false);
   const [imageFile, setImageFile] = useState(null);
-
   const [hasFetched, setHasFetched] = useState(false);
-  interface Board {
-    id: string;
-    title: string;
-  }
-  const endpoint = 'http://localhost:3000/api/graphql';
+
   const { data, refetch } = useQuery({
     queryKey: ['boards', fetchBoardsForForm, userId, endpoint],
     queryFn: () =>
@@ -105,10 +96,9 @@ export default function Upload() {
       throw error;
     }
   };
-  const navigate = useNavigate();
+
   const createPinMutation = useMutation({
     mutationFn: async (input) => {
-      const endpoint = 'http://localhost:3000/api/graphql';
       const response: PinDetails = await request(
         endpoint,
         createPinMutationSchema,
@@ -119,10 +109,43 @@ export default function Upload() {
       return response;
     },
     onSuccess: (data) => {
-      console.log('Mutation successful:', data.createPin.pin);
-      setTimeout(() => {
-        navigate(`/pin/${data.createPin.pin.id}`);
-      }, 3000);
+      const createdPin = data.createPin;
+      console.log('Mutation successful:', createdPin);
+      const status = createdPin.success ? 'success' : 'error';
+      if (status === `success`) {
+        toast({
+          render: () => (
+            <section className="bg-alert_success flex w-full flex-row flex-wrap items-center justify-start gap-4 rounded-md px-4 py-2 text-white">
+              <div className="flex shrink-0 flex-row flex-wrap items-start self-start">
+                <span className="">
+                  <CheckCircleIcon color="white" boxSize="1.2rem" />
+                </span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold">{createdPin.message}</h1>
+                <p className="text-lg">
+                  Go to the{' '}
+                  <button
+                    onClick={() => navigate(`/pin/${createdPin.pin.id}`)}
+                    className="bg-action ml-1 rounded-md px-2 text-lg font-bold text-white"
+                  >
+                    new pin
+                  </button>
+                </p>
+              </div>
+            </section>
+          ),
+          isClosable: true,
+          duration: null,
+        });
+      } else {
+        toast({
+          status: `${status}`,
+          title: `${createdPin.message}`,
+          isClosable: true,
+          duration: 3000,
+        });
+      }
     },
     onError: (error) => {
       console.error('Mutation error:', error);
@@ -222,9 +245,9 @@ export default function Upload() {
   if (!isAuthenticated)
     return (
       <>
-        <div className="flex flex-col justify-center items-center min-h-full w-full">
-          <div className="flex-auto h-full p-12 max-w-[50rem]">
-            <p className="text-3xl text-center">
+        <div className="flex min-h-full w-full flex-col items-center justify-center">
+          <div className="h-full max-w-[50rem] flex-auto p-12">
+            <p className="text-center text-3xl">
               You&rsquo;re not logged in! You must have an account to upload a
               pin to moody.
             </p>
@@ -234,7 +257,7 @@ export default function Upload() {
       </>
     );
   return (
-    <div className="flex flex-col mt-2 mb-2 drop-shadow-xl max-[1024px]:max-w-[508px] w-full max-w-[63.5rem]">
+    <div className="my-2 flex w-full max-w-[63.5rem] flex-col drop-shadow-xl max-[1024px]:max-w-[508px]">
       <form
         id="upload_pin"
         onSubmit={handleSubmit}
@@ -242,13 +265,12 @@ export default function Upload() {
       >
         <FormControl
           id="upload_form"
-          className="flex flex-col flex-auto max-w-[72rem] justify-center gap-10 p-10 rounded-xl border-2"
+          className="flex max-w-6xl flex-auto flex-col justify-center gap-10 rounded-xl border-2 p-10"
         >
-          <header className="flex flex-row w-full justify-end">
-            <div className="flex w-full max-w-[20rem] gap-1">
+          <header className="flex w-full flex-row justify-end">
+            <div className="flex w-full max-w-80 gap-1">
               <Select
                 id="select-board"
-                required
                 name="board"
                 onChange={(e) =>
                   setPinDetails({
@@ -259,7 +281,7 @@ export default function Upload() {
                 onClick={handleSelectClick}
                 icon={<ChevronDownIcon />}
               >
-                <option value="" className="p-5 m-6">
+                <option value="" className="m-6 p-5">
                   Choose a board
                 </option>
                 {!data && (
@@ -280,7 +302,7 @@ export default function Upload() {
                 _hover={{
                   background: 'actions.pink.100',
                 }}
-                isLoading={createPinMutation.isSuccess}
+                isLoading={createPinMutation.isPending}
               >
                 Save Pin
               </Button>
@@ -288,18 +310,18 @@ export default function Upload() {
           </header>
           <section
             id="form_body"
-            className="flex flex-row flex-wrap h-full justify-center gap-10"
+            className="flex h-full flex-row flex-wrap justify-center gap-10"
           >
             {/* image */}
-            <aside className="flex flex-col flex-auto justify-center min-w-[271px] max-w-[23rem] relative">
+            <aside className="relative flex min-w-[271px] max-w-[23rem] flex-auto flex-col justify-center">
               {showLabel && !showImagePin ? (
-                <div className="flex flex-1 relative">
+                <div className="relative flex flex-1">
                   <FormLabel
                     display="flex"
                     margin={0}
-                    className="flex-auto flex-col justify-center items-center p-5 rounded-xl h-full min-h-[500px] w-full max-w-[508px] cursor-pointer bg-slate-100 border-slate-400 border-2 border-dashed"
+                    className="size-full max-h-[35rem] min-h-[500px] max-w-[508px] flex-auto cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-400 bg-slate-100 p-5"
                   >
-                    <div className="flex flex-auto flex-col justify-center items-center text-lg uppercase font-semibold">
+                    <div className="flex flex-auto flex-col items-center justify-center text-lg font-semibold uppercase">
                       <ArrowUpIcon
                         boxSize={8}
                         rounded="100%"
@@ -310,21 +332,24 @@ export default function Upload() {
                       />
                       Click to Upload
                     </div>
-                    <section className="text-center text-pretty">
+                    <section className="text-pretty text-center">
                       .jpg, png, .webp less than 20mb
                     </section>
                   </FormLabel>
                 </div>
               ) : (
                 <>
-                  <section className="image_pin max-w-[31.75rem] h-auto flex flex-col flex-auto relative">
+                  <section
+                    id="image_pin"
+                    className=" relative flex h-auto max-w-[31.75rem] flex-auto flex-col"
+                  >
                     <img
                       src={pinDetails.img_blob}
                       alt="pin_image"
-                      className="object-contain rounded-xl max-h-[44.75rem]"
+                      className="max-h-[44.75rem] rounded-xl object-contain"
                     />
                     <button
-                      className="absolute top-0 right-0 m-2 w-[2.5rem] aspect-square cursor-pointer rounded-full bg-gray-200 hover:bg-slate-400 hover:text-white hover:outline hover:outline-black flex justify-center items-center"
+                      className="absolute right-0 top-0 m-2 flex aspect-square w-10 cursor-pointer items-center justify-center rounded-full bg-gray-200 hover:bg-slate-400 hover:text-white hover:outline hover:outline-black"
                       onClick={() => {
                         setImagePin(false);
                         setShowLabel(true);
@@ -354,7 +379,7 @@ export default function Upload() {
             <div className="m-2 w-full max-w-[31.75rem]">
               <ul
                 id="form_pin_details"
-                className="flex flex-col flex-auto w-full"
+                className="flex w-full flex-auto flex-col"
               >
                 <li>
                   <FormLabel htmlFor="title">Title</FormLabel>
@@ -384,17 +409,21 @@ export default function Upload() {
                     height="50px"
                     placeholder="Add a Description"
                     _placeholder={{ fontSize: '20px' }}
-                    maxLength={500}
-                    onChange={(e) =>
+                    maxLength={350}
+                    resize="none"
+                    onChange={(e) => {
+                      const textarea = e.currentTarget;
+                      textarea.style.height = 'auto';
+                      textarea.style.height = `${textarea.scrollHeight}px`;
                       setPinDetails({
                         ...pinDetails,
                         description: e.target.value,
-                      })
-                    }
+                      });
+                    }}
                   ></Textarea>
                 </li>
-                <li className="userSection">
-                  <div className="py-2 flex items-center gap-2">
+                <li id="userSection" className="">
+                  <div className="flex items-center gap-2 py-2">
                     <ProfileAvatar size="4rem" src={avatar} />
                     <h4 className="">{username}</h4>
                   </div>
@@ -417,7 +446,7 @@ export default function Upload() {
                     }
                   ></Input>
                 </li>
-                <li className="tag-container flex flex-col w-full">
+                <li id="tag-container" className="flex w-full flex-col">
                   <h1 className="text-[1.55rem] text-slate-400">Add Tags</h1>
                   <FormHelperText marginTop="-2px" marginBottom="2px">
                     Press comma to confirm. Tags are not displayed publicly.
@@ -434,16 +463,21 @@ export default function Upload() {
                     paddingBlock={2}
                     width="100%"
                   >
-                    <ul className="tag_list flex flex-wrap items-center gap-1 w-full min-w-[50%] overflow-scroll">
+                    <ul
+                      id="tag_list"
+                      className=" flex w-full min-w-[50%] flex-wrap items-center gap-1 overflow-scroll"
+                    >
                       {tags.map((tag, index) => (
                         <li
                           key={index}
-                          className="tag bg-slate-600 p-1 rounded-xl text-white flex flex-row items-center"
+                          className="tag flex w-auto max-w-60 flex-row flex-wrap items-center overflow-hidden text-wrap break-words rounded-xl bg-slate-600 p-1 text-white"
                         >
-                          <div className="px-1 leading-7">{tag}</div>
+                          <div className="max-w-[50rem] text-wrap px-1 leading-7">
+                            {tag}
+                          </div>
                           <button
                             onClick={() => deleteTag(index)}
-                            className="px-1 font-semibold text-xl"
+                            className="mb-1 px-1 text-xl font-semibold"
                           >
                             <SmallCloseIcon />
                           </button>

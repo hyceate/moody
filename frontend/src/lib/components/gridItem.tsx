@@ -64,7 +64,7 @@ export const GridComponentWithUser = ({
                   </Box>
                 )}
               </Link>
-              <section className="flex flex-col px-1 pt-2 gap-[2px]">
+              <section className="flex flex-col gap-[2px] px-1 pt-2">
                 {data.title ? (
                   <>
                     <Link to={`/pin/${data.id}`}>

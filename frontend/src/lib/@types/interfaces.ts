@@ -8,6 +8,7 @@ export interface Pin {
   id: string;
   title: string;
   description: string;
+  isPrivate: boolean;
   link: string;
   imgPath: string;
   imgWidth: number;
@@ -17,10 +18,12 @@ export interface Pin {
 }
 
 export interface Board {
+  user: User;
   id: string;
   title: string;
   description: string;
-  private: boolean;
+  url: string;
+  isPrivate: boolean;
   pins: Pin[];
   pinCount: number;
 }

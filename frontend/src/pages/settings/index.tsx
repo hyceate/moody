@@ -32,7 +32,8 @@ import {
   validateName,
   validatePassword,
   validateNewPassword,
-} from 'actions/validations';
+} from '@/actions/validations';
+import { endpoint } from '@/query/fetch';
 import { GraphQLClient } from 'graphql-request';
 import axios from 'axios';
 import { ProfileAvatar } from '@/components/avatar';
@@ -148,7 +149,6 @@ export default function Settings() {
       }
     }
   };
-  const endpoint = 'http://localhost:3000/api/graphql';
   const createGraphQLClient = () => {
     return new GraphQLClient(endpoint, {
       credentials: 'include',
@@ -238,9 +238,9 @@ export default function Settings() {
 
   return (
     <>
-      <section className="flex flex-col justify-center items-center gap-5 mt-5 pb-10">
+      <section className="mt-5 flex flex-col items-center justify-center gap-5 pb-10">
         <h1 className="text-2xl font-bold">edit profile</h1>
-        <div className="flex flex-col justify-center items-center gap-3 mb-5">
+        <div className="mb-5 flex flex-col items-center justify-center gap-3">
           <ProfileAvatar size="150px" src={user.avatarUrl} />
           <Button onClick={onOpen}>Change Avatar</Button>
         </div>
@@ -252,7 +252,7 @@ export default function Settings() {
           }}
         >
           {(props: FormikProps<FormValues>) => (
-            <Form className="flex flex-col justify-center items-center gap-4 w-full min-w-[320px]">
+            <Form className="flex w-full min-w-[320px] flex-col items-center justify-center gap-4">
               <Field name="username" validate={validateName}>
                 {({ field, form }: FieldProps<FormValues>) => (
                   <FormControl
@@ -429,7 +429,7 @@ export default function Settings() {
                   </FormControl>
                 )}
               </Field>
-              <div className="flex flex-row mt-1.5 gap-2 w-full">
+              <div className="mt-1.5 flex w-full flex-row gap-2">
                 <Button width="100%">
                   <input type="reset"></input>
                 </Button>
@@ -460,17 +460,17 @@ export default function Settings() {
             <ModalBody>
               <form
                 encType="multipart/form-data"
-                className="flex flex-col justify-center items-center gap-1"
+                className="flex flex-col items-center justify-center gap-1"
                 onSubmit={handleFormSubmit}
               >
                 {showLabel && !showImagePin ? (
-                  <div className="hover:outline rounded-full">
+                  <div className="rounded-full hover:outline">
                     <FormLabel
                       className="cursor-pointer"
                       padding="0"
                       margin="0"
                     >
-                      <div className="text-center bg-slate-200 hover:bg-slate-300 p-5 rounded-full">
+                      <div className="rounded-full bg-slate-200 p-5 text-center hover:bg-slate-300">
                         Click to Upload
                       </div>
                       <input
@@ -484,7 +484,7 @@ export default function Settings() {
                     </FormLabel>
                   </div>
                 ) : (
-                  <div className="relative flex flex-col justify-center items-center hover:outline rounded-full w-[10rem] aspect-square overflow-hidden">
+                  <div className="relative flex aspect-square w-40 flex-col items-center justify-center overflow-hidden rounded-full hover:outline">
                     <FormLabel
                       htmlFor="upload_avatar"
                       padding="0"

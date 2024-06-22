@@ -6,7 +6,6 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-import multer from 'multer';
 import {
   processAvatar,
   processUploadedFile,
@@ -94,10 +93,10 @@ const startGraphQLYogaServer = async () => {
     bodyParser.json(),
     yoga,
   );
-  app.use((req, res, next) => {
-    console.log('Session middleware check:', req.session);
-    next();
-  });
+  // app.use((req, res, next) => {
+  //   console.log('Session middleware check:', req.session);
+  //   next();
+  // });
   // Routes
   app.get('/', (req: Request, res: Response) => {
     res.send('server running');

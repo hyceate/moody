@@ -91,12 +91,12 @@ export const Header = () => {
 
   return (
     <>
-      <header className="md:sticky top-0 flex flex-row max-md:flex-wrap items-center h-auto w-full py-4 px-2 border-b-2 bg-white z-10 gap-3">
-        <aside id="logo" className="px-2 -mt-1">
+      <header className="top-0 z-10 flex h-auto w-full flex-row items-center gap-3 border-b-2 bg-white px-2 py-4 max-md:flex-wrap md:sticky">
+        <aside id="logo" className="-mt-1 px-2">
           <h1 className="text-4xl font-black">
             <Link
               to="/"
-              className="active:text-[#22595c] hover:text-[#76ABAE] rounded"
+              className="rounded hover:text-[#76ABAE] active:text-[#22595c]"
             >
               moody.
             </Link>
@@ -106,7 +106,7 @@ export const Header = () => {
         <nav id="left" className="text-xl font-black">
           <NavLink to="/">home</NavLink>
         </nav>
-        <div id="searchWrapper" className="flex-auto w-full">
+        <div id="searchWrapper" className="w-full flex-auto">
           <SearchBar />
         </div>
 
@@ -114,13 +114,13 @@ export const Header = () => {
           {!isAuthenticated ? (
             <ul
               id="notLoggedIn"
-              className="flex flex-row items-center justify-end gap-1 w-full min-w-[12rem]"
+              className="flex w-full min-w-48 flex-row items-center justify-end gap-1"
             >
               <li>
                 <ActionNavs
                   id="login"
                   to="#login"
-                  className="bg-slate-300 hover:bg-slate-700 text-black hover:text-white transition-colors"
+                  className="bg-slate-300 text-black transition-colors hover:bg-slate-700 hover:text-white"
                   onClick={openLoginModal}
                 >
                   login
@@ -130,7 +130,7 @@ export const Header = () => {
                 <ActionNavs
                   id="signUp"
                   to="#signup"
-                  className="bg-action hover:bg-rose-700 text-white transition-colors"
+                  className="bg-action text-white transition-colors hover:bg-rose-700"
                   onClick={openSignUpModal}
                 >
                   sign up
@@ -161,7 +161,7 @@ export const Header = () => {
             flexDir="column"
           >
             <h1 className="text-4xl font-bold">moody.</h1>
-            <h2 className="my-2 lowercase text-2xl font-bold">
+            <h2 className="my-2 text-2xl font-bold lowercase">
               {isLoginForm ? 'hello, Welcome back' : 'Welcome to moody'}
             </h2>
           </ModalHeader>

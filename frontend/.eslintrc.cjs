@@ -9,11 +9,12 @@ module.exports = {
     "plugin:react-hooks/recommended",
     "plugin:@tanstack/eslint-plugin-query/recommended",
     "plugin:prettier/recommended",
+    "plugin:tailwindcss/recommended",
     "prettier",
   ],
   ignorePatterns: ["dist", ".eslintrc.cjs"],
   parser: "@typescript-eslint/parser",
-  plugins: ["react", "react-refresh", "react-hooks", "prettier"],
+  plugins: ["react", "react-refresh", "react-hooks", "prettier", "tailwindcss"],
   rules: {
     "comma-dangle": 0,
     "import/no-cycle": "off",
@@ -49,5 +50,6 @@ module.exports = {
         endOfLine: "auto",
       },
     ],
+    "tailwindcss/no-custom-classname": 0,
   },
 };

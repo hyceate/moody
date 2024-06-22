@@ -6,7 +6,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { routes } from '@generouted/react-router';
 import { ChakraProvider } from '@chakra-ui/react';
 import theme from './theme.ts';
-import { AuthProvider } from './context/authContext';
+import { AuthProvider } from '@/context/authContext.tsx';
 import './index.css';
 
 const queryClient = new QueryClient();

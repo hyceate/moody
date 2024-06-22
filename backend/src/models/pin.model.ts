@@ -8,7 +8,7 @@ interface Pin {
   createdAt: Date;
   user: Types.ObjectId;
   tags?: string[];
-  private: boolean;
+  isPrivate: boolean;
   link?: string;
   comments: {
     user: Types.ObjectId;
@@ -72,7 +72,7 @@ const pinSchema: Schema<Pin> = new Schema(
         trim: true,
       },
     ],
-    private: {
+    isPrivate: {
       type: Boolean,
       default: false,
     },

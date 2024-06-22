@@ -9,13 +9,14 @@ export default defineConfig({
   server: { port: 5173 },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src/'),
-      actions: `${path.resolve(__dirname, './src/actions/')}`,
-      components: `${path.resolve(__dirname, './src/components/')}`,
-      query: `${path.resolve(__dirname, './src/query/')}`,
+      '@': path.resolve(__dirname, './src/lib/'),
+      actions: `${path.resolve(__dirname, './src/lib/actions/')}`,
+      context: `${path.resolve(__dirname, './src/lib/context/')}`,
+      components: `${path.resolve(__dirname, './src/lib/components/')}`,
+      query: `${path.resolve(__dirname, './src/lib/query/')}`,
       public: `${path.resolve(__dirname, './public/')}`,
-      pages: path.resolve(__dirname, './src/pages'),
-      types: `${path.resolve(__dirname, './src/@types')}`,
+      pages: path.resolve(__dirname, './src/lib/pages'),
+      types: `${path.resolve(__dirname, './src/lib/@types')}`,
     },
   },
 });

@@ -1,13 +1,14 @@
 import mongoose, { Schema, Types } from 'mongoose';
-
+import slugify from 'slugify';
 interface Board {
   title: string;
   description?: string;
   user: Types.ObjectId;
+  url: string;
   followers: Types.ObjectId[];
   pins: Types.ObjectId[];
   pinCount: number;
-  private: boolean;
+  isPrivate: boolean;
 }
 const boardSchema: Schema<Board> = new Schema(
   {
@@ -31,7 +32,11 @@ const boardSchema: Schema<Board> = new Schema(
       type: String,
       required: false,
     },
-    private: {
+    url: {
+      type: String,
+      required: true,
+    },
+    isPrivate: {
       type: Boolean,
       default: false,
     },
@@ -50,7 +55,12 @@ const boardSchema: Schema<Board> = new Schema(
     toJSON: { virtuals: true },
   },
 );
-
+boardSchema.pre('save', function (next) {
+  if (this.isModified('title') || this.isNew) {
+    this.url = slugify(this.title, { lower: true });
+  }
+  next();
+});
 boardSchema.virtual('pinCount').get(function (this: { pins: any[] }): number {
   return this.pins.length;
 });

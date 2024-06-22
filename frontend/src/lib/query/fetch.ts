@@ -1,4 +1,5 @@
 import request from 'graphql-request';
+export const endpoint = 'http://localhost:3000/api/graphql';
 
 export const fetchData = async <T>(
   endpoint: string,

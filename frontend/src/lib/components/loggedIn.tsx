@@ -8,8 +8,8 @@ import {
   MenuItem,
   MenuDivider,
 } from '@chakra-ui/react';
-import { handleLogOut } from '../actions/handleUser';
-import { useAuth } from '../context/authContext';
+import { handleLogOut } from '@/actions/handleUser';
+import { useAuth } from '@/context/authContext';
 import { ProfileAvatar } from './avatar';
 export const LoggedIn = () => {
   const { user } = useAuth();
@@ -20,7 +20,7 @@ export const LoggedIn = () => {
     username = user.username;
   }
   return (
-    <ul id="loggedIn" className="flex justify-end gap-5 items-center ml-3">
+    <ul id="loggedIn" className="ml-3 flex items-center justify-end gap-5">
       <li className="mx-1">
         <Link to="/upload">
           <Button padding="5px">
@@ -31,7 +31,7 @@ export const LoggedIn = () => {
       <li className="flex items-center justify-center gap-1">
         <Link
           to={`/profile/${username}`}
-          className="flex items-center hover:outline rounded-full"
+          className="flex items-center rounded-full hover:outline"
         >
           <ProfileAvatar size="50px" src={avatar} />
         </Link>

@@ -32,7 +32,7 @@ interface PinInput {
   link: string;
   tags: string[];
   imgPath: string;
-  board: string;
+  board?: string;
 }
 export const pinResolvers = {
   Query: {
@@ -102,11 +102,17 @@ export const pinResolvers = {
           createdAt: new Date().toISOString(),
         });
         await newPin.save();
-        await Board.findByIdAndUpdate(
-          input.board,
-          { $push: { pins: newPin._id } },
-          { new: true, useFindAndModify: false },
-        );
+        if (
+          input.board &&
+          typeof input.board === 'string' &&
+          input.board.trim() !== ''
+        ) {
+          await Board.findByIdAndUpdate(
+            input.board,
+            { $push: { pins: newPin._id } },
+            { new: true, useFindAndModify: false },
+          );
+        }
         const flattenedTags = input.tags.flat();
         const serializedPin = {
           ...newPin.toObject(),

@@ -44,15 +44,30 @@ export const fetchUserData = `
     userByName(username: $name) {
       id
       username
+      avatarUrl
     }
   }`;
-
+export const createBoardGql = `
+  mutation createBoard($input: CreateBoardInput!){
+    createBoard(input: $input){
+      success
+      message
+      board {
+        title
+      }
+    }}
+  `;
 export const fetchUserBoards = `
   query GetBoardsByUser($user_Id: ID!) {
     boardsByUser(userId: $user_Id) {
       id
       title
-      private
+      isPrivate
+      url
+      user{
+        id
+        username
+      }
       pins {
         id
         title
@@ -77,10 +92,13 @@ export const fetchUserPins = `
 
 // singular board with pins
 export const fetchBoardsByUsernameTitle = `
-  query boards($username: String!, $title: String!){
-    boardsByUsernameTitle(username: $username, title: $title){
+  query boards($username: String!, $url: String!){
+    boardsByUsernameTitle(username: $username, url: $url){
+      id
       title
-      private
+      isPrivate
+      url
+      description
       pins {
         id
         title
@@ -93,6 +111,19 @@ export const fetchBoardsByUsernameTitle = `
     }
   }
 `;
+export const fetchPinsByUserBoards = `
+query PinsByUserBoards($userId: ID!){
+  pinsByUserBoards(userId: $userId){
+    id
+    imgPath
+    imgWidth
+    imgHeight
+    createdAt
+    user{
+      id
+      username
+    }
+  }}`;
 
 export const createPinMutationSchema = `
 mutation CreatePin($input: CreatePinInput!) {

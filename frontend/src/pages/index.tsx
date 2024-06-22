@@ -1,4 +1,4 @@
-import AllPins from '../components/allpins';
+import AllPins from '@/components/allpins';
 export default function Home() {
   return (
     <>

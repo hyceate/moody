@@ -60,17 +60,6 @@ userSchema.pre('save', async function (next) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(this.password, salt);
     this.password = hashedPassword;
-    if (this.isNew) {
-      // Create a new board for the user
-      const board = new Board({
-        user: this._id,
-        title: 'All Pins',
-        description: 'This is your default board',
-        followers: [],
-        pins: [],
-      });
-      await board.save();
-    }
     next();
   } catch (error) {
     return next();

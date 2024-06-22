@@ -9,7 +9,7 @@ import {
 import { FormControl, FormLabel, FormErrorMessage } from '@chakra-ui/react';
 import { Field, Form, Formik, FormikProps, FieldProps } from 'formik';
 import { handleLogIn } from '../actions/handleUser';
-import { validateEmail, validatePassword } from 'actions/validations';
+import { validateEmail, validatePassword } from '@/actions/validations';
 // component start
 export const LoginModal = () => {
   const [show, setShow] = useState(false);
@@ -35,7 +35,7 @@ export const LoginModal = () => {
       >
         {(props: FormikProps<FormValues>) => (
           <Form>
-            <ul className="w-full max-w-[15rem]">
+            <ul className="w-full max-w-60">
               <li>
                 <Field name="email" validate={validateEmail}>
                   {({ field, form }: FieldProps<FormValues>) => (
@@ -112,7 +112,7 @@ export const LoginModal = () => {
                   color="white"
                   _hover={{ background: 'actions.pink.100' }}
                   py="1.4rem"
-                  className="w-full text-lg font-bold mt-5 transition-colors"
+                  className="mt-5 w-full text-lg font-bold transition-colors"
                   rounded="full"
                   isLoading={props.isSubmitting}
                 >

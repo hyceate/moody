@@ -18,7 +18,7 @@ import {
   validateEmail,
   validateName,
   validatePassword,
-} from 'actions/validations';
+} from '@/actions/validations';
 import { request } from 'graphql-request';
 
 // type
@@ -113,7 +113,7 @@ export const SignUpModal = ({
       >
         {(props: FormikProps<FormValues>) => (
           <Form>
-            <ul className="w-full max-w-[15rem]">
+            <ul className="w-full max-w-60">
               {/* username */}
               <li className="mb-2">
                 <Field name="username" validate={validateName}>
@@ -229,7 +229,7 @@ export const SignUpModal = ({
                 <Button
                   type="reset"
                   py="1.4rem"
-                  className="w-full text-lg font-bold mt-5 transition-colors"
+                  className="mt-5 w-full text-lg font-bold transition-colors"
                   rounded="full"
                   isLoading={props.isSubmitting}
                 >
@@ -243,7 +243,7 @@ export const SignUpModal = ({
                     background: 'actions.pink.100',
                   }}
                   py="1.4rem"
-                  className="w-full text-lg font-bold mt-2 transition-colors"
+                  className="mt-2 w-full text-lg font-bold transition-colors"
                   rounded="full"
                   isLoading={props.isSubmitting}
                 >

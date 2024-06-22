@@ -23,7 +23,7 @@ const pinTypeDefs = gql`
     createdAt: String
     user: User
     tags: [String!]
-    private: Boolean
+    isPrivate: Boolean
     link: String
     comments: [Comment!]
     board: [String!]
@@ -71,9 +71,9 @@ const pinTypeDefs = gql`
     imgWidth: Int!
     imgHeight: Int!
     tags: [String!]
-    private: Boolean! = false
+    isPrivate: Boolean! = false
     link: String
-    board: [String!] = default
+    board: String
   }
   input CreateCommentInput {
     user: ID!

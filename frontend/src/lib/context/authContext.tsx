@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { checkAuth } from '../actions/auth';
+import { checkAuth } from '@/actions/auth';
 interface User {
   id: string;
   username: string;
@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const user = isAuthenticated ? data.user : null;
   const refreshAuth = async () => {
     setKey((prevKey) => prevKey + 1);
-    queryClient.invalidateQueries({ queryKey: ['auth'] });
+    queryClient.invalidateQueries({ queryKey: ['auth', key] });
   };
   return (
     <AuthContext.Provider

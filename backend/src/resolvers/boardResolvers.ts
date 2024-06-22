@@ -2,6 +2,7 @@ import { ObjectId } from 'mongoose';
 import { Board } from '../models/board.model';
 import { Pin } from '../models/pin.model';
 import { User } from '../models/user.model';
+import slugify from 'slugify';
 
 interface User {
   _id: ObjectId;
@@ -16,8 +17,8 @@ interface Pin {
   createdAt: Date;
   user: User;
   savedBy: User[];
+  isPrivate: boolean;
   tags: string[];
-  private: boolean;
   link: string;
   comments: { user: User; comment: string; commentTime: Date }[];
 }
@@ -26,15 +27,16 @@ interface Board {
   user: User;
   title: string;
   description: string;
-  private: boolean;
+  isPrivate: boolean;
   pins: Pin[];
   pinCount: number;
 }
 interface BoardInput {
-  name: string;
+  id: string;
   title: string;
+  user: string;
   description: string;
-  private: boolean;
+  isPrivate: boolean;
 }
 
 export const boardResolvers = {
@@ -79,9 +81,11 @@ export const boardResolvers = {
           throw new Error(`User with username '${username}' not found`);
         }
         const boards = await Board.find({ user: user._id })
+          .sort({ createdAt: -1 })
           .populate({
             path: 'pins',
             model: Pin,
+            perDocumentLimit: 3,
             populate: [{ path: 'user', model: User }],
           })
           .populate({ path: 'user', model: User });
@@ -93,18 +97,14 @@ export const boardResolvers = {
     },
     boardsByUsernameTitle: async (
       _: any,
-      { username, title }: { username: string; title?: string },
+      { username, url }: { username: string; url?: string },
     ) => {
       try {
         const user = await User.findOne({ username });
         if (!user) {
           throw new Error(`User with username '${username}' not found`);
         }
-        const filter: any = { user: user._id };
-        if (title) {
-          filter.title = { $regex: title, $options: 'i' };
-        }
-        const boards = await Board.find(filter)
+        const boards = await Board.find({ url })
           .populate({
             path: 'pins',
             model: Pin,
@@ -134,13 +134,44 @@ export const boardResolvers = {
         throw new Error('Failed to fetch boards');
       }
     },
+    pinsByUserBoards: async (_: any, { userId }: { userId: string }) => {
+      try {
+        const boards = await Board.find({ user: userId }).populate({
+          path: 'pins',
+          model: Pin,
+          populate: {
+            path: 'user',
+            model: User,
+          },
+          options: { sort: { createdAt: -1 } },
+        });
+        const pins = boards.flatMap((board) => board.pins);
+        return pins;
+      } catch (err) {
+        return err;
+      }
+    },
   },
   Mutation: {
     createBoard: async (_: any, { input }: { input: BoardInput }) => {
       try {
-        // Create the board with a reference to the user's ObjectId
-        const newBoard = await Board.create(input);
-        // Populate the 'user' field to include the user's data
+        const { title, user, description, isPrivate } = input;
+        const existingBoard = await Board.findOne({ title, user: user });
+        if (existingBoard) {
+          return {
+            success: false,
+            message: 'Board already exists',
+            board: null,
+          };
+        }
+        const url = slugify(title, { lower: true });
+        const newBoard = await Board.create({
+          title,
+          description,
+          url,
+          user,
+          isPrivate,
+        });
         const populatedBoard = await newBoard.populate('user');
 
         return {
@@ -164,8 +195,11 @@ export const boardResolvers = {
         }
       }
     },
-
-    // Delete a board by its ID
+    updateBoard: async (_: any, { input }: { input: BoardInput }) => {
+      const { id, title, user, isPrivate, description } = input;
+      const existingBoard = Board.findById({ id: id });
+    },
+    // to do
     deleteBoard: async (_: any, { id }: { id: string }) => {
       const deletedBoard = await Board.findByIdAndDelete(id);
       return deletedBoard;

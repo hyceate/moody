@@ -1,12 +1,20 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { fetchData } from '../../query/fetch';
-import { fetchPinData } from '../../query/queries';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchData } from '@/query/fetch';
+import { fetchPinData } from '@/query/queries';
 import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import '../../components/css/transitions.css';
-import { Button, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react';
+import '@/components/css/transitions.css';
+import {
+  Button,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  useToast,
+  Spinner,
+} from '@chakra-ui/react';
 import { ExternalLinkIcon, EditIcon } from '@chakra-ui/icons';
-import { useAuth } from '../../context/authContext';
+import { useAuth } from '@/context/authContext';
 import { GraphQLClient } from 'graphql-request';
 import { ProfileAvatar } from '@/components/avatar';
 import { Pin as PinDeets } from '@/@types/interfaces';
@@ -31,9 +39,12 @@ const createGraphQLClient = () => {
     credentials: 'include',
   });
 };
+
 export default function Pin() {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery<PinDeets>({
     queryKey: ['pinDeets', id, endpoint, fetchPinData],
     queryFn: () =>
@@ -48,6 +59,14 @@ export default function Pin() {
         id: id,
       });
       return response;
+    },
+    onSuccess: (data) => {
+      const deletedPin = data;
+      queryClient.invalidateQueries({ queryKey: ['pins', 'savedPins'] });
+      toast({
+        status: `success`,
+        title: `${deletedPin.deletePin.message}`,
+      });
     },
   });
   const handleDelete = async () => {
@@ -120,33 +139,43 @@ export default function Pin() {
       });
     }
   }, [isLoading, data]);
+
+  if (isLoading)
+    return (
+      <div className="size-full flex-auto">
+        <div className="flex size-full h-[80dvh] flex-auto flex-col items-center justify-center">
+          <Spinner boxSize="15rem"></Spinner>
+        </div>
+      </div>
+    );
+
   if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div className="flex flex-1 flex-col w-full justify-center items-center px-5 max-w-[72rem] relative">
+    <div className="relative flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5">
       <section
         id="pin-container"
-        className="flex flex-row flex-wrap justify-center bg-white max-[1055px]:max-w-[31.75rem] w-full max-w-[63.5rem] h-full rounded-[2rem] fadeIn mt-3 mb-5 relative"
+        className="fadeIn relative mb-5 mt-3 flex size-full max-w-[63.5rem] flex-row flex-wrap justify-center rounded-[2rem] bg-white max-[1055px]:max-w-[31.75rem]"
         style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 20px 0px' }}
       >
         {!isLoading && data && (
           <>
             <div
               id="closeup"
-              className="flex flex-col flex-auto w-full max-w-[31.75rem] h-full  justify-center items-center relative rounded-[32px_32px_0_0] min-[1055px]:rounded-[32px_0_0_32px] overflow-hidden"
+              className="relative flex size-full max-w-[31.75rem] flex-auto flex-col items-center justify-center overflow-hidden rounded-[32px_32px_0_0] min-[1055px]:rounded-[32px_0_0_32px]"
             >
               <div
                 id="image-container"
-                className="flex flex-col flex-auto h-full w-full relative "
+                className="relative flex size-full flex-auto flex-col "
                 ref={imageContainerRef}
               >
                 <div
-                  className="flex flex-col w-full relative"
+                  className="relative flex w-full flex-col"
                   ref={secondaryImgContainer}
                 >
                   <img
                     src={data?.imgPath}
-                    className="w-full object-contain rounded-[inherit]"
+                    className="w-full rounded-[inherit] object-contain"
                     loading="eager"
                     alt={data?.title || data?.description || 'Image'}
                   />
@@ -156,18 +185,18 @@ export default function Pin() {
 
             <div
               id="pin_details_container"
-              className="flex flex-col w-full max-w-[508px]"
+              className="flex w-full max-w-[508px] flex-col"
             >
-              <div className="flex flex-col flex-auto min-h-0 min-w-0 pl-[2rem]">
+              <div className="flex min-h-0 min-w-0 flex-auto flex-col pl-8">
                 <div
                   id="actions"
-                  className="sticky top-[64px] z-[2] bg-white w-full"
+                  className="sticky top-[64px] z-[2] w-full rounded-[0_2rem_0_0] bg-white"
                 >
-                  <div className="min-h-[5.75rem] pt-[2rem]">
+                  <div className="min-h-[5.75rem] pt-8">
                     <div id="actions_menu" className="">
                       <Menu>
                         <MenuButton as={Button} padding="0" margin="0">
-                          <div className="text-3xl p-0 mb-3">...</div>
+                          <div className="mb-3 p-0 text-3xl">...</div>
                         </MenuButton>
                         <MenuList>
                           {data &&
@@ -207,19 +236,17 @@ export default function Pin() {
 
                 <div
                   id="pin_contents"
-                  className="flex flex-col h-full overflow-auto"
+                  className="flex h-full flex-col overflow-auto"
                 >
-                  <div className="flex flex-col flex-auto gap-8 pr-[2rem] mt-4">
+                  <div className="mt-4 flex flex-auto flex-col gap-8 pr-8">
                     {data?.link && (
                       <div id="pinLink" className="">
                         <a
                           href={`${data.link}`}
-                          className="flex underline underline-offset-4 min-w-0"
+                          className="flex min-w-0 underline underline-offset-4"
                         >
                           <ExternalLinkIcon boxSize={6} marginInline={1} />
-                          <h1 className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                            {data.link}
-                          </h1>
+                          <h1 className="flex-1 truncate">{data.link}</h1>
                         </a>
                       </div>
                     )}
@@ -231,16 +258,16 @@ export default function Pin() {
                       )}
                       {data?.description && (
                         <div id="pinDesc" className="">
-                          <p className="text-lg text-balance">
+                          <p className="text-balance text-lg">
                             {data.description}
                           </p>
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-wrap flex-row items-center gap-5">
+                    <div className="flex flex-row flex-wrap items-center gap-5">
                       <Link
                         to={`/profile/${data.user.username}`}
-                        className="flex flex-wrap flex-row items-center gap-5"
+                        className="flex flex-row flex-wrap items-center gap-5"
                       >
                         <ProfileAvatar size="4rem" src={data.user.avatarUrl} />
                         <h1 className="text-xl">{data.user.username}</h1>
@@ -258,35 +285,31 @@ export default function Pin() {
 
               <div
                 id="comments_container"
-                className="z-[2] sticky bottom-0 bg-white py-5 px-5 border border-x-0 border-y-1 border-b-0 border-slate-300"
+                className="sticky bottom-0 z-[2] rounded-[0_0_2rem_0] border border-x-0 border-y-2 border-b-0 border-slate-300 bg-white p-5"
               >
                 <form className="max-w-full px-1">
                   <label htmlFor="comment" className="text-xl font-medium">
                     What do you think?
                   </label>
-                  <div className="flex flex-row items-stretch outline outline-1 outline-slate-300 p-2 rounded-[24px] focus-within:outline-slate-500 mt-3">
-                    <div className="py-2 px-2 h-auto text-wrap break-words whitespace-pre-wrap -z-10 w-full select-none overflow-hidden"></div>
+                  <div className="mt-3 flex flex-row items-stretch rounded-[24px] p-2 outline outline-1 outline-slate-300 focus-within:outline-slate-500">
                     <textarea
                       id="comment"
                       name="comment"
-                      className="-ml-[80%] flex-grow py-2 pr-2 h-auto resize-none w-full text-wrap break-words whitespace-pre-wrap outline-none overflow-hidden"
+                      className="h-auto w-full grow resize-none overflow-hidden whitespace-pre-wrap text-wrap break-words py-2 pr-2 outline-none"
                       rows={1}
                       minLength={3}
                       maxLength={250}
-                      onInput={(event) => {
-                        const textarea = event.target as HTMLTextAreaElement;
-                        const divElement =
-                          textarea.previousElementSibling as HTMLDivElement;
-                        if (divElement) {
-                          divElement.innerText = textarea.value + '\n';
-                        }
+                      onInput={(e) => {
+                        const textarea = e.currentTarget;
+                        textarea.style.height = 'auto';
+                        textarea.style.height = `${textarea.scrollHeight}px`;
                       }}
                       placeholder="Add a Comment"
                     ></textarea>
-                    <div className="right-0 top-0 bottom-0 flex items-center">
+                    <div className="inset-y-0 right-0 flex items-center">
                       <button
                         type="submit"
-                        className="bg-rose-500 text-white font-bold rounded-lg p-2 mr-3 "
+                        className="mr-3 rounded-lg bg-rose-500 p-2 font-bold text-white "
                       >
                         Submit
                       </button>

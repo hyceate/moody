@@ -1,9 +1,9 @@
 import request from 'graphql-request';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPinsSchema } from 'query/queries';
+import { fetchPinsSchema } from '@/query/queries';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Box, Masonry } from 'gestalt';
-import { GridComponentWithUser } from 'components/gridItem';
+import { GridComponentWithUser } from '@/components/gridItem';
 import { restoreScroll } from '@/actions/scroll';
 import './css/gestalt.css';
 import { Spinner } from '@chakra-ui/react';
@@ -44,31 +44,32 @@ const AllPins = () => {
       }
     },
   });
-  const BASE_URL = window.location.origin;
+
   useLayoutEffect(() => {
     document.title = "moody's home";
     if (data && initialLoad.current) {
       setPins(data);
+    }
+  }, [data, isLoading]);
+  useEffect(() => {
+    if (pins)
       setTimeout(() => {
         setShowPins(true);
-      }, 250);
-    }
-  }, [BASE_URL, data, isLoading]);
-  useEffect(() => {
+      }, 150);
+
     if (showPins) {
-      requestAnimationFrame(() => {
-        restoreScroll();
-      });
+      restoreScroll();
     }
-  }, [showPins]);
+  }, [pins, showPins]);
+
   if (error) return <div>Error: {error.message}</div>;
   if (!showPins && isLoading)
     return (
       <div
         id="index-pins"
-        className="flex w-full h-full justify-center items-center"
+        className="flex size-full items-center justify-center"
       >
-        <div className="flex-1 flex h-[80dvh] justify-center items-center">
+        <div className="flex h-[80dvh] flex-1 items-center justify-center">
           <Spinner boxSize={200}></Spinner>
         </div>
       </div>
@@ -77,7 +78,7 @@ const AllPins = () => {
   return (
     <div
       id="index-pins"
-      className="h-full w-full px-[5rem] max-lg:px-0 pt-[2rem] pb-10"
+      className="size-full px-20 pb-10 pt-8 max-lg:px-0"
       ref={(el) => {
         scrollContainerRef.current = el;
       }}
