@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongoose';
+import { ObjectId, SortOrder } from 'mongoose';
 import { Board } from '../models/board.model';
 import { Pin } from '../models/pin.model';
 import { User } from '../models/user.model';
@@ -98,25 +98,26 @@ export const boardResolvers = {
     },
     pinsByUserBoards: async (
       _: any,
-      { userId }: { userId: string },
+      { userId, sort }: { userId: string, sort: number },
       context: any,
     ) => {
       try {
         const currentUser = context.req.session.user
           ? context.req.session.user.id
           : null;
+          const sortOrder = sort === 1 ? 1 : -1;
         const boards = await Board.find({
           user: userId,
           $or: [{ isPrivate: false }, { isPrivate: true, user: currentUser }],
         }).populate({
           path: 'pins',
           model: Pin,
-          options: { sort: { createdAt: -1 } },
+          options: { sort: { createdAt: sortOrder } },
           populate: {
             path: 'user',
             model: User,
           },
-        });
+        }).sort({ createdAt: sortOrder });
         const pins = boards.flatMap((board) => board.pins);
         return pins;
       } catch (err) {
@@ -168,36 +169,52 @@ export const boardResolvers = {
       }
     },
     // to do
-    updateBoard: async (_: any, { input }: { input: BoardInput }) => {
-      const { id, title, user, isPrivate, description } = input;
+    updateBoard: async (_: any, { input }: { input: BoardInput }, context:any) => {
+      const { id: boardId, title, user: boardUser, isPrivate, description } = input;
+      const currentUser = context.req.session.user
+          ? context.req.session.user.id
+          : null;
+
       try {
-        const board = await Board.findById({ id: id }).populate({
+        const board = await Board.findById(boardId).populate({
           path: 'pins',
           model: Pin,
         });
+
         if (!board)
           return {
             success: false,
             message: 'unable to find board',
             board: null,
           };
-        if (board.user.toString() !== user)
+        if (boardUser !== currentUser)
           return {
             success: false,
             message: 'not authorized to edit board',
             board: null,
           };
+
         board.title = title;
-        board.isPrivate = isPrivate;
         board.description = description;
+        board.isPrivate = isPrivate;
         await board.save();
+
         const boardPins = board.pins.flatMap((pin: any) => pin._id);
         await Pin.updateMany(
           { _id: { $in: boardPins } },
           { $set: { isPrivate: isPrivate } },
         );
+        return {
+          success: true,
+          message: 'Board Updated',
+          board: board,
+        }
       } catch (error) {
-        return error;
+        return {
+          success: false,
+          message: error,
+          board: null
+        };
       }
     },
     // to test

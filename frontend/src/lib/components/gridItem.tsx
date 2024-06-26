@@ -15,7 +15,7 @@ export const GridComponentWithUser = ({
 }) => {
   return (
     <div className={`fadeIn ${showPins ? 'loaded' : ''} will-change-transform`}>
-      <Box rounding={8} marginBottom={3}>
+      <Box rounding={8} marginBottom={3} >
         <Flex direction="column">
           <Flex.Item>
             <div>

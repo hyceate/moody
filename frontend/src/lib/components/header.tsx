@@ -35,10 +35,13 @@ const NavLink = styled(Link)`
   }
 `;
 const ActionNavs = styled(Link)`
+  display:block;
   font-weight: 700;
   padding-inline: 1rem;
   padding-block: 0.5rem;
   border-radius: 1000px;
+  width: 100%;
+  text-wrap: nowrap;
 `;
 
 // Component Start

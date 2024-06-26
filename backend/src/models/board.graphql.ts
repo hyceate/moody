@@ -16,7 +16,7 @@ const boardTypeDefs = gql`
   type Query {
     boardsByUser(userId: ID!): [Board!]
     boardsByUsernameTitle(username: String!, url: String!): [Board!]
-    pinsByUserBoards(userId: ID!): [Pin!]
+    pinsByUserBoards(userId: ID!, sort: Int): [Pin!]
   }
   type CreateBoardResponse {
     success: Boolean!
@@ -34,9 +34,10 @@ const boardTypeDefs = gql`
   }
 
   input CreateBoardInput {
+    id: ID!
+    user: ID!
     title: String!
     description: String
-    user: ID!
     isPrivate: Boolean!
   }
 `;

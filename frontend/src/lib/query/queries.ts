@@ -49,38 +49,7 @@ export const fetchUserData = `
       avatarUrl
     }
   }`;
-export const createBoardGql = `
-  mutation createBoard($input: CreateBoardInput!){
-    createBoard(input: $input){
-      success
-      message
-      board {
-        title
-      }
-    }}
-  `;
-export const fetchUserBoards = `
-  query GetBoardsByUser($user_Id: ID!) {
-    boardsByUser(userId: $user_Id) {
-      id
-      title
-      isPrivate
-      url
-      user{
-        id
-        username
-      }
-      pins {
-        id
-        title
-        description
-        imgPath
-        imgWidth
-        imgHeight
-      }
-      pinCount
-    }
-  }`;
+
 
 export const fetchUserPins = `
   query getPinsByUser($userid: ID!) {
@@ -97,39 +66,10 @@ export const fetchUserPins = `
     }
   }`;
 
-// singular board with pins
-export const fetchBoardsByUsernameTitle = `
-  query boards($username: String!, $url: String!){
-    boardsByUsernameTitle(username: $username, url: $url){
-      id
-      title
-      isPrivate
-      url
-      description
-      user{
-        id
-        username
-        avatarUrl
-      }
-      pins {
-        id
-        title
-        description
-        imgPath
-        imgWidth
-        imgHeight
-        user{
-          username
-          avatarUrl
-        }
-      }
-      pinCount
-    }
-  }
-`;
+
 export const fetchPinsByUserBoards = `
-query PinsByUserBoards($userId: ID!){
-  pinsByUserBoards(userId: $userId){
+query PinsByUserBoards($userId: ID!, $sort: Int = -1){
+  pinsByUserBoards(userId: $userId, sort: $sort){
     id
     imgPath
     imgWidth
@@ -160,6 +100,30 @@ mutation CreatePin($input: CreatePinInput!) {
   }
 }
 `;
+
+export const fetchUserBoards = `
+  query GetBoardsByUser($user_Id: ID!) {
+    boardsByUser(userId: $user_Id) {
+      id
+      title
+      isPrivate
+      url
+      user{
+        id
+        username
+      }
+      pins {
+        id
+        title
+        description
+        imgPath
+        imgWidth
+        imgHeight
+      }
+      pinCount
+    }
+  }`;
+
 export const fetchBoardsForForm = `
   query GetBoardsByUser($userId: ID!) {
     boardsByUser(userId: $userId) {
@@ -172,12 +136,65 @@ export const fetchBoardsForForm = `
     }
 }
 `;
+// singular board with pins
+export const fetchBoardsByUsernameTitle = `
+  query boards($username: String!, $url: String!){
+    boardsByUsernameTitle(username: $username, url: $url){
+      id
+      title
+      isPrivate
+      url
+      description
+      user{
+        id
+        username
+        avatarUrl
+      }
+      pins {
+        id
+        title
+        description
+        imgPath
+        imgWidth
+        imgHeight
+        user{
+          username
+          avatarUrl
+        }
+      }
+      pinCount
+    }
+  }
+`;
+export const createBoardGql = `
+  mutation createBoard($input: CreateBoardInput!){
+    createBoard(input: $input){
+      success
+      message
+      board {
+        title
+        description
+        isPrivate
+      }
+    }
+  }`;
 
+export const updateBoardGql = `
+mutation updateBoard($input: CreateBoardInput!){
+  updateBoard(input: $input){
+    success
+    message
+    board {
+      title
+      description
+      isPrivate
+    }
+  }
+}`;
 export const deleteBoardSchema = `
 mutation($boardId: ID!){
   deleteBoard(boardId: $boardId){
     success
     message
   }
-}
-`;
+}`;

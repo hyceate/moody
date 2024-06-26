@@ -49,7 +49,7 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
     },
     onSuccess: (data) => {
       const createBoard = data.createBoard;
-      console.log(createBoard);
+      // console.log(createBoard);
       const status = createBoard.success ? 'success' : 'error';
       if (status === 'success') {
         queryClient.invalidateQueries({ queryKey: ['boards'] });

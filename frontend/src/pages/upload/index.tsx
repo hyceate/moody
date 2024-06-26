@@ -17,6 +17,7 @@ import {
   ModalContent,
   ModalOverlay,
   useDisclosure,
+  CloseButton,
 } from '@chakra-ui/react';
 import {
   ArrowUpIcon,
@@ -136,7 +137,8 @@ export default function Upload() {
       if (status === `success`) {
         toast({
           render: () => (
-            <section className="bg-alert_success flex w-full flex-row flex-wrap items-center justify-start gap-4 rounded-md px-4 py-2 text-white">
+            <section className="bg-alert_success flex w-full flex-row flex-wrap items-center justify-start gap-4 rounded-md px-4 py-2 text-white relative">
+              
               <div className="flex shrink-0 flex-row flex-wrap items-start self-start">
                 <span className="">
                   <CheckCircleIcon color="white" boxSize="1.2rem" />
@@ -154,6 +156,9 @@ export default function Upload() {
                   </button>
                 </p>
               </div>
+              <button type="button" className="absolute top-0 right-0 p-1" onClick={()=>{toast.closeAll()}}>
+                <CloseButton />
+              </button>
             </section>
           ),
           isClosable: true,

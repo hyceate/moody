@@ -1,13 +1,14 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Box, Masonry } from 'gestalt';
 import { Link } from 'react-router-dom';
 import { endpoint, fetchData } from '@/query/fetch';
 import {
   deleteBoardSchema,
   fetchBoardsByUsernameTitle,
+  updateBoardGql,
 } from '@/query/queries';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GridComponentWithUser } from '@/components/gridItem';
 import 'components/css/gestalt.css';
 import { ProfileAvatar } from '@/components/avatar';
@@ -26,6 +27,8 @@ import {
   Modal,
   ModalBody,
   ModalContent,
+  ModalFooter,
+  ModalHeader,
   ModalOverlay,
   Spinner,
   Switch,
@@ -33,7 +36,15 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { GraphQLClient } from 'graphql-request';
+import { EditIcon } from '@chakra-ui/icons';
 
+interface UpdateBoardInput {
+  user: string;
+  id: string;
+  title: string;
+  description: string;
+  isPrivate: boolean;
+}
 interface deleteResponse {
   deleteBoard: {
     success: boolean;
@@ -61,6 +72,7 @@ const createGraphQLClient = () => {
     credentials: 'include',
   });
 };
+const client = createGraphQLClient();
 
 //component start
 export default function SingleBoard() {
@@ -85,10 +97,10 @@ export default function SingleBoard() {
     username ?? '',
     url ?? '',
   );
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const useDeleteBoard = useMutation({
+  const DeleteBoard = useMutation({
     mutationFn: async (boardId: string) => {
-      const client = createGraphQLClient();
       const response: deleteResponse = await client.request(deleteBoardSchema, {
         boardId,
       });
@@ -106,19 +118,25 @@ export default function SingleBoard() {
       }
     },
   });
- 
-  if (boardData && !boardData[0]) {
-    navigate(`/`);
-    toast({
-      status: 'error',
-      title:'Unable to find board',
-      duration:1000,
-      isClosable:true
-    })
-    return 404;
-  }
-  
-  useMemo(() => {
+  const UpdateBoard = useMutation({
+    mutationFn: async (input: UpdateBoardInput) => {
+      const response = await client.request(updateBoardGql, { input: input });
+      return response;
+    },
+    onSuccess: (data: any) => {
+      const upDated = data.updateBoard;
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      if (upDated.success === true) {
+        toast({
+          status: 'success',
+          title: 'Board Updated',
+          isClosable: true,
+          duration: 3000,
+        });
+      }
+    },
+  });
+  useEffect(() => {
     if (boardData && boardData.length > 0 && !showPins) {
       setPins(boardData[0].pins);
       setTimeout(() => {
@@ -126,24 +144,72 @@ export default function SingleBoard() {
       }, 150);
     }
   }, [boardData, showPins]);
+  if (boardData && !boardData[0]) {
+    navigate(`/`);
+    toast({
+      status: 'error',
+      title: 'Unable to find board',
+      duration: 1000,
+      isClosable: true,
+    });
+    return 404;
+  }
 
   const board = boardData && boardData.length > 0 ? boardData[0] : undefined;
   const handleBoardDelete = async () => {
-    if (board) await useDeleteBoard.mutateAsync(board.id);
+    if (board) await DeleteBoard.mutateAsync(board.id);
   };
+
+  async function handleUpdateBoard() {
+    const form = document.getElementById(
+      'updateBoardForm',
+    ) as HTMLFormElement | null;
+    if (form) {
+      const formData = new FormData(form);
+      const privateSwitch = document.querySelector(
+        'input[name="isPrivate"]',
+      ) as HTMLInputElement;
+      const privateValue = privateSwitch?.checked;
+      const user = formData.get('boardUser') as string;
+      const id = formData.get('boardId') as string;
+      const title = formData.get('title') as string;
+      const description = formData.get('description') as string;
+      const input = {
+        user,
+        id,
+        title,
+        description,
+        isPrivate: privateValue,
+      };
+      // console.log(input)
+      if (input) await UpdateBoard.mutateAsync(input);
+    } else {
+      console.error('Form not found');
+    }
+  }
+
   let avatar;
-  if(boardData && boardData[0].user){
-    avatar= boardData[0].user.avatarUrl;
+  if (boardData && boardData[0].user) {
+    avatar = boardData[0].user.avatarUrl;
   }
   return (
     <>
       <div className="mb-10 mt-5 flex w-full flex-col items-center justify-center gap-px">
         <section className="mb-2 flex w-full flex-col items-center justify-center">
-          <h1 className="mt-2 text-3xl font-bold">{board?.title}</h1>
+          <div>
+            <h1 className="mt-2 text-3xl font-bold">
+              {board?.title}
+              {isAuthenticated && username === user?.username && (
+                <Button ref={drawerButtonRef} onClick={onDrawerOpen}>
+                  <EditIcon />
+                </Button>
+              )}
+            </h1>
+          </div>
           <h2>{board?.pinCount} pins</h2>
         </section>
 
-        <div className="aspect-square w-[5rem]">
+        <div className="aspect-square w-20">
           <Link to={`/profile/${username}`} className="font-bold">
             <ProfileAvatar size="5rem" src={avatar} />
           </Link>
@@ -156,13 +222,6 @@ export default function SingleBoard() {
           </Link>
         </p>
         <p className="empty:none max-w-[40rem]">{board?.description}</p>
-        <div>
-          {isAuthenticated && username === user?.username && (
-            <Button ref={drawerButtonRef} onClick={onDrawerOpen}>
-              Edit Board
-            </Button>
-          )}
-        </div>
       </div>
       <div className="flex items-center justify-center">
         {isBoardLoading && !showPins && <Spinner boxSize="10rem" />}
@@ -176,7 +235,11 @@ export default function SingleBoard() {
             layout="flexible"
             minCols={1}
             renderItem={({ data }) => (
-              <GridComponentWithUser data={data} showPins={showPins} showUser={true}/>
+              <GridComponentWithUser
+                data={data}
+                showPins={showPins}
+                showUser={true}
+              />
             )}
             scrollContainer={() => {
               if (scrollContainerRef.current instanceof HTMLDivElement) {
@@ -206,8 +269,16 @@ export default function SingleBoard() {
               <h1 className="text-2xl font-bold">
                 Edit &ldquo;{board?.title}&rdquo;
               </h1>
-              <form className="flex w-full flex-auto flex-col items-center justify-center gap-8">
-                <input type="hidden" value={board?.id}></input>
+              <form
+                className="flex w-full flex-auto flex-col items-center justify-center gap-8"
+                id="updateBoardForm"
+              >
+                <input
+                  name="boardUser"
+                  type="hidden"
+                  value={board?.user.id}
+                ></input>
+                <input name="boardId" type="hidden" value={board?.id}></input>
                 <FormControl>
                   <FormLabel htmlFor="title" fontSize="1.2rem">
                     Name
@@ -236,17 +307,23 @@ export default function SingleBoard() {
                     }}
                   ></textarea>
                 </FormControl>
-                <FormControl>
+                <FormControl id="isPrivate">
                   <div className="flex w-full flex-wrap items-center justify-end">
                     <FormLabel
-                      htmlFor="private"
+                      htmlFor="isPrivate"
                       padding="0"
                       margin="0"
                       marginRight=".5rem"
                     >
                       Private
                     </FormLabel>
-                    <Switch id="private" padding="0" margin="0" />
+                    <Switch
+                      id="isPrivate"
+                      name="isPrivate"
+                      padding="0"
+                      margin="0"
+                      defaultChecked={board?.isPrivate}
+                    />
                   </div>
                 </FormControl>
               </form>
@@ -259,14 +336,12 @@ export default function SingleBoard() {
                 width="100%"
               >
                 <Button
-                  type="submit"
+                  type="button"
                   bg="actions.pink.50"
                   color="white"
                   width="100%"
                   _hover={{ background: 'actions.pink.100' }}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                  }}
+                  onClick={handleUpdateBoard}
                 >
                   Update
                 </Button>
@@ -281,22 +356,26 @@ export default function SingleBoard() {
         <ModalOverlay />
         <ModalContent>
           <ModalBody>
-            <section className="items-wrap flex flex-col py-10">
-              <h1 className="text-pretty text-xl">
-                Are you sure you want to delete &ldquo;
-                <span className="font-bold">{board?.title}</span>&rdquo;?
-              </h1>
-              <div className="mt-10 flex gap-4 self-end">
-                <Button
-                  bg="actions.pink.50"
-                  color="white"
-                  _hover={{ background: 'actions.pink.100' }}
-                  onClick={handleBoardDelete}
-                >
-                  Yes
-                </Button>
-                <Button>No</Button>
-              </div>
+            <section className="items-wrap flex flex-col">
+              <ModalHeader>
+                <h1 className="text-pretty text-xl">
+                  Are you sure you want to delete &ldquo;
+                  <span className="font-bold">{board?.title}</span>&rdquo;?
+                </h1>
+              </ModalHeader>
+              <ModalFooter>
+                <div className="flex gap-4 self-end">
+                  <Button
+                    bg="actions.pink.50"
+                    color="white"
+                    _hover={{ background: 'actions.pink.100' }}
+                    onClick={handleBoardDelete}
+                  >
+                    Yes
+                  </Button>
+                  <Button>No</Button>
+                </div>
+              </ModalFooter>
             </section>
           </ModalBody>
         </ModalContent>
