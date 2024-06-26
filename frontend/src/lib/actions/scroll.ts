@@ -20,7 +20,7 @@ export const restoreScroll = () => {
       });
     }, 0);
   }
-  // localStorage.removeItem('scrollPositionOnHome');
+  localStorage.removeItem('scrollPositionOnHome');
 };
 export const handleSaveScrollPos = () => {
   localStorage.setItem(

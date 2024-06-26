@@ -160,7 +160,7 @@ export const userResolvers = {
           email: user.email,
           avatarUrl: user.avatarUrl,
         };
-        console.log('Context: ', context.req.session);
+        // console.log('Context: ', context.req.session);
 
         return {
           success: true,

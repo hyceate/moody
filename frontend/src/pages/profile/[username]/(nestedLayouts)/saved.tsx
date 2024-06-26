@@ -6,7 +6,7 @@ export default function ProfileSavedPins() {
 
   return (
     <>
-      <SavedBoards username={username}></SavedBoards>
+      <SavedBoards username={username} />
     </>
   );
 }

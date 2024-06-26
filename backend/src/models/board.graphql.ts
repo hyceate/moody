@@ -14,11 +14,8 @@ const boardTypeDefs = gql`
   }
 
   type Query {
-    board(id: ID!): Board # Get a board by ID
-    boardsByUser(userId: ID!): [Board!] # Fetch all boards by userID
-    boardsByUserName(username: String!): [Board!]
+    boardsByUser(userId: ID!): [Board!]
     boardsByUsernameTitle(username: String!, url: String!): [Board!]
-    allBoards: [Board!]!
     pinsByUserBoards(userId: ID!): [Pin!]
   }
   type CreateBoardResponse {
@@ -26,10 +23,14 @@ const boardTypeDefs = gql`
     message: String!
     board: Board
   }
+  type DeleteBoardResponse {
+    success: Boolean!
+    message: String!
+  }
   type Mutation {
     createBoard(input: CreateBoardInput!): CreateBoardResponse!
     updateBoard(input: CreateBoardInput!): CreateBoardResponse!
-    deleteBoard(boardId: ID!): Boolean!
+    deleteBoard(boardId: ID!): DeleteBoardResponse!
   }
 
   input CreateBoardInput {

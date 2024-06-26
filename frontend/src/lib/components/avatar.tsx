@@ -7,9 +7,22 @@ export const ProfileAvatar = ({
   size: string;
   src?: string;
 }) => {
+  const handleImageLoaded = (
+    event: React.SyntheticEvent<HTMLImageElement, Event>,
+  ) => {
+    event.currentTarget.style.visibility = 'visible';
+  };
   return (
-    <>
-      <Avatar boxSize={size} src={`${src}`} />
-    </>
+    <div className={`w-[${size}] aspect-square h-auto`}>
+      {src && (
+        <Avatar
+          boxSize={size}
+          src={src}
+          style={{ visibility: 'hidden' }}
+          onLoad={handleImageLoaded}
+        />
+      )}
+      {!src && <Avatar boxSize={size} />}
+    </div>
   );
 };

@@ -10,11 +10,8 @@ interface Pin {
   tags?: string[];
   isPrivate: boolean;
   link?: string;
-  comments: {
-    user: Types.ObjectId;
-    comment: string;
-    commentTime: Date;
-  }[];
+  board?: Types.ObjectId[];
+  comments: Types.ObjectId[];
 }
 
 const pinSchema: Schema<Pin> = new Schema(
@@ -39,7 +36,7 @@ const pinSchema: Schema<Pin> = new Schema(
       type: String,
       required: false,
       trim: true,
-      maxLength: 500,
+      maxLength: 350,
     },
     imgPath: {
       type: String,
@@ -60,6 +57,13 @@ const pinSchema: Schema<Pin> = new Schema(
       trim: true,
       type: String,
     },
+    board: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'board',
+        default: [],
+      },
+    ],
     comments: [
       {
         type: Schema.Types.ObjectId,

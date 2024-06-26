@@ -1,13 +1,18 @@
-import request from 'graphql-request';
+import { GraphQLClient } from 'graphql-request';
 export const endpoint = 'http://localhost:3000/api/graphql';
 
+const createGraphQLClient = () => {
+  return new GraphQLClient(endpoint, {
+    credentials: 'include',
+  });
+};
+const client = createGraphQLClient();
 export const fetchData = async <T>(
-  endpoint: string,
   query: string,
   variables: Record<string, any>,
 ): Promise<T> => {
   try {
-    const response = await request(endpoint, query, variables);
+    const response = await client.request(query, variables);
     return response as T;
   } catch (error) {
     throw new Error(`Error fetching data: ${(error as Error).message}`);

@@ -30,6 +30,7 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
   const { user } = useAuth();
   const toast = useToast();
   const id = user ? user.id : undefined;
+
   const queryClient = useQueryClient();
   const createGraphQLClient = () => {
     return new GraphQLClient(endpoint, {
@@ -51,7 +52,6 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
       console.log(createBoard);
       const status = createBoard.success ? 'success' : 'error';
       if (status === 'success') {
-        onClose();
         queryClient.invalidateQueries({ queryKey: ['boards'] });
         toast({
           status: `${status}`,
@@ -59,6 +59,7 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
           isClosable: true,
           duration: 1000,
         });
+        onClose();
       } else {
         toast({
           status: `${status}`,
@@ -90,7 +91,7 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
       user: id,
     };
     if (input) await createBoard.mutateAsync(input);
-    console.log('Form Values: ', input);
+    // console.log('Form Values: ', input);
   };
 
   return (

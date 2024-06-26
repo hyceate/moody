@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { fetchData, endpoint } from '@/query/fetch';
+import { fetchData } from '@/query/fetch';
 import {
   fetchPinsByUserBoards,
   fetchUserBoards,
@@ -25,17 +25,17 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
   const [showBoards, setShowBoards] = useState(false);
   const userData = useQuery<User>({
-    queryKey: ['user', username, endpoint],
+    queryKey: ['user', username],
     queryFn: () =>
-      fetchData<{ userByName: User }>(endpoint, fetchUserData, {
+      fetchData<{ userByName: User }>(fetchUserData, {
         name: username,
       }).then((data) => data.userByName),
     enabled: !!username,
   });
   const savedPinsData = useQuery<Pin[]>({
-    queryKey: ['savedPins', username, endpoint, userData.data?.id],
+    queryKey: ['savedPins', username, userData.data?.id],
     queryFn: () =>
-      fetchData<{ pinsByUserBoards: Pin[] }>(endpoint, fetchPinsByUserBoards, {
+      fetchData<{ pinsByUserBoards: Pin[] }>(fetchPinsByUserBoards, {
         userId: userData.data?.id,
       })
         .then((data) => {
@@ -51,13 +51,14 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
     enabled: !!username && userData.isSuccess,
   });
   const boardData = useQuery<Board[]>({
-    queryKey: ['boards', username, endpoint, userData.data?.id],
+    queryKey: ['boards', username, userData.data?.id],
     queryFn: () =>
-      fetchData<{ boardsByUser: Board[] }>(endpoint, fetchUserBoards, {
+      fetchData<{ boardsByUser: Board[] }>(fetchUserBoards, {
         user_Id: userData.data?.id,
       }).then((data) => data.boardsByUser),
     enabled: !!username && userData.isSuccess,
   });
+
   useEffect(() => {
     if (boardData.isSuccess) {
       setTimeout(() => {
@@ -83,19 +84,16 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
         </div>
       )}
       <div className="justfiy-center flex flex-col items-stretch max-lg:px-4 lg:px-16">
-        {savedPinsData.data &&
-          savedPinsData.data.length < 1 &&
-          boardData.data &&
-          boardData.data.length < 1 && (
-            <div className="flex flex-col items-center justify-center text-center">
-              No boards to share <br />
-              TT _ TT
-            </div>
-          )}
+        {boardData.data && boardData.data.length === 0 && (
+          <div className="flex flex-col items-center justify-center text-center">
+            No boards to share <br />
+            TT _ TT
+          </div>
+        )}
         <div
           className={` fadeIn ${showBoards ? 'loaded' : ''} flex flex-wrap items-stretch justify-center gap-2`}
         >
-          {savedPinsData.data && savedPinsData.data?.length > 1 && (
+          {savedPinsData.data && savedPinsData.data?.length > 0 && (
             <Link to={`/profile/${username}/pins`}>
               <div className="board-grid-item h-full">
                 <div className="boardImages h-[156px] w-[238px] ">
@@ -221,6 +219,8 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
               ) : null}
             </>
           ))}
+          <div className="mt-30 w-[238px] flex-[0_1_238px]"></div>
+          <div className="mt-30 w-[238px] flex-[0_1_238px]"></div>
           <div className="mt-30 w-[238px] flex-[0_1_238px]"></div>
           <div className="mt-30 w-[238px] flex-[0_1_238px]"></div>
           <div className="mt-30 w-[238px] flex-[0_1_238px]"></div>

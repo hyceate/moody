@@ -6,6 +6,7 @@ export const fetchPinsSchema = `
       imgPath
       imgWidth
       imgHeight
+      isPrivate
       user {
         username
         avatarUrl
@@ -24,6 +25,7 @@ query getPin($id: ID!) {
     id
     title
     description
+    isPrivate
     link
     imgPath
     imgWidth
@@ -81,9 +83,14 @@ export const fetchUserBoards = `
   }`;
 
 export const fetchUserPins = `
-  query getPinsByUser($id: ID!) {
-    pinsByUser(id: $id) {
+  query getPinsByUser($userid: ID!) {
+    pinsByUser(userid: $userid) {
       id
+      user {
+        username
+        avatarUrl
+      }
+      isPrivate
       imgPath
       imgWidth
       imgHeight
@@ -99,6 +106,11 @@ export const fetchBoardsByUsernameTitle = `
       isPrivate
       url
       description
+      user{
+        id
+        username
+        avatarUrl
+      }
       pins {
         id
         title
@@ -106,6 +118,10 @@ export const fetchBoardsByUsernameTitle = `
         imgPath
         imgWidth
         imgHeight
+        user{
+          username
+          avatarUrl
+        }
       }
       pinCount
     }
@@ -122,6 +138,7 @@ query PinsByUserBoards($userId: ID!){
     user{
       id
       username
+      avatarUrl
     }
   }}`;
 
@@ -144,10 +161,23 @@ mutation CreatePin($input: CreatePinInput!) {
 }
 `;
 export const fetchBoardsForForm = `
-query GetBoardsByUser($userId: ID!) {
-boardsByUser(userId: $userId) {
-  id
-  title
+  query GetBoardsByUser($userId: ID!) {
+    boardsByUser(userId: $userId) {
+      id
+      title
+      isPrivate
+      pins{
+        imgPath
+      }
+    }
 }
+`;
+
+export const deleteBoardSchema = `
+mutation($boardId: ID!){
+  deleteBoard(boardId: $boardId){
+    success
+    message
+  }
 }
 `;

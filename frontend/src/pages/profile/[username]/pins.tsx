@@ -2,6 +2,7 @@ import { Pin, User } from '@/@types/interfaces';
 import { GridComponentWithUser } from '@/components/gridItem';
 import { endpoint, fetchData } from '@/query/fetch';
 import { fetchPinsByUserBoards, fetchUserData } from '@/query/queries';
+import { Spinner } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { Masonry } from 'gestalt';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -15,15 +16,15 @@ export default function AllSavedPins() {
   const userData = useQuery<User>({
     queryKey: ['user', username, endpoint],
     queryFn: () =>
-      fetchData<{ userByName: User }>(endpoint, fetchUserData, {
+      fetchData<{ userByName: User }>(fetchUserData, {
         name: username,
       }).then((data) => data.userByName),
     enabled: !!username,
   });
   const savedPinsData = useQuery<Pin[]>({
-    queryKey: ['savedPins', username, endpoint, userData.data?.id],
+    queryKey: ['savedPins', username, userData.data?.id],
     queryFn: () =>
-      fetchData<{ pinsByUserBoards: Pin[] }>(endpoint, fetchPinsByUserBoards, {
+      fetchData<{ pinsByUserBoards: Pin[] }>(fetchPinsByUserBoards, {
         userId: userData.data?.id,
       })
         .then((data) => {
@@ -49,12 +50,18 @@ export default function AllSavedPins() {
       setShowPins(true);
     }, 100);
   }, [showPins]);
+
   return (
     <div className="mt-5 flex size-full flex-col items-center justify-center gap-5">
       <section className="">
         <h1 className="text-xl font-medium">All Saved Pins</h1>
       </section>
-      {savedPinsData.data && savedPinsData.data.length > 0 ? (
+      {!showPins && (
+        <div>
+          <Spinner boxSize="15rem"></Spinner>
+        </div>
+      )}
+      {savedPinsData.data && savedPinsData.data.length > 0 && (
         <Masonry
           columnWidth={200}
           gutterWidth={20}
@@ -62,14 +69,15 @@ export default function AllSavedPins() {
           layout="flexible"
           minCols={1}
           renderItem={({ data }) => (
-            <GridComponentWithUser data={data} showPins={showPins} />
+            <GridComponentWithUser data={data} showPins={showPins} showUser={true}/>
           )}
-          scrollContainer={() => scrollContainerRef.current || window}
+          scrollContainer={() => {
+            if (scrollContainerRef.current instanceof HTMLDivElement) {
+              return scrollContainerRef.current;
+            }
+            return document.body;
+          }}
         />
-      ) : (
-        <div className="flex w-full items-center justify-center">
-          <h1>No Pins available</h1>
-        </div>
       )}
     </div>
   );

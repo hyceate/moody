@@ -39,7 +39,7 @@ const pinTypeDefs = gql`
   }
   type Query {
     pins(sort: PinsSortInput): [Pin!]!
-    pinsByUser(id: ID!): [Pin!]
+    pinsByUser(userid: ID!, sort: Int): [Pin!]
     pin(id: ID!): Pin
   }
 
@@ -57,9 +57,14 @@ const pinTypeDefs = gql`
     message: String!
     comment: Comment
   }
+  type SavePinToBoardResponse {
+    success: Boolean!
+    message: String!
+  }
   type Mutation {
     createPin(input: CreatePinInput!): CreatePinResponse!
     deletePin(id: ID!): DeletePinResponse!
+    savePinToBoard(pinId: ID!, boardId: ID!): SavePinToBoardResponse!
     createComment(input: CreateCommentInput!): CreateCommentResponse!
   }
 

@@ -4,11 +4,19 @@ import {
   FormControl,
   FormLabel,
   FormHelperText,
-  Select,
   Textarea,
   Button,
   Spinner,
   useToast,
+  PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverBody,
+  PopoverFooter,
+  Modal,
+  ModalContent,
+  ModalOverlay,
+  useDisclosure,
 } from '@chakra-ui/react';
 import {
   ArrowUpIcon,
@@ -16,6 +24,8 @@ import {
   ChevronDownIcon,
   CloseIcon,
   CheckCircleIcon,
+  AddIcon,
+  LockIcon,
 } from '@chakra-ui/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -23,10 +33,11 @@ import request from 'graphql-request';
 import { fetchData, endpoint } from '@/query/fetch';
 import './upload.css';
 import { useAuth } from '@/context/authContext';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { createPinMutationSchema, fetchBoardsForForm } from '@/query/queries';
 import { ProfileAvatar } from '@/components/avatar';
 import { Board, Pin } from '@/@types/interfaces';
+import { CreateBoard } from '@/components/createBoard';
 
 interface PinDetails {
   createPin: {
@@ -49,7 +60,7 @@ export default function Upload() {
     title: '',
     description: '',
     link: '',
-    img_blob: '',
+    img_blob: undefined as string | undefined,
     imgWidth: 0,
     imgHeight: 0,
     private: 'false',
@@ -61,11 +72,21 @@ export default function Upload() {
   const [isKeyReleased, setIsKeyReleased] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [hasFetched, setHasFetched] = useState(false);
+  const {
+    isOpen: isModalOpen,
+    onClose: onModalClose,
+    onOpen: onModalOpen,
+  } = useDisclosure();
+  const {
+    isOpen: isPopOverOpen,
+    onToggle: onPopOverToggle,
+    onClose: onPopOverClose,
+  } = useDisclosure();
 
   const { data, refetch } = useQuery({
-    queryKey: ['boards', fetchBoardsForForm, userId, endpoint],
+    queryKey: ['boards', userId],
     queryFn: () =>
-      fetchData<{ boardsByUser: Board[] }>(endpoint, fetchBoardsForForm, {
+      fetchData<{ boardsByUser: Board[] }>(fetchBoardsForForm, {
         userId,
       }).then((data) => data.boardsByUser),
     enabled: false,
@@ -110,7 +131,7 @@ export default function Upload() {
     },
     onSuccess: (data) => {
       const createdPin = data.createPin;
-      console.log('Mutation successful:', createdPin);
+      // console.log('Mutation successful:', createdPin);
       const status = createdPin.success ? 'success' : 'error';
       if (status === `success`) {
         toast({
@@ -136,7 +157,7 @@ export default function Upload() {
             </section>
           ),
           isClosable: true,
-          duration: null,
+          duration: 3000,
         });
       } else {
         toast({
@@ -168,6 +189,7 @@ export default function Upload() {
       }
     }
   };
+
   const onKeyUp = () => {
     setIsKeyReleased(true);
   };
@@ -207,6 +229,7 @@ export default function Upload() {
   };
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     const { filePath, imgWidth, imgHeight } = await uploadImage(
       imageFile,
       pinDetails.user,
@@ -231,17 +254,18 @@ export default function Upload() {
     }
   };
   const handleSelectClick = () => {
+    onPopOverToggle();
     if (!hasFetched) {
       setHasFetched(true);
     }
+    refetch();
   };
   useEffect(() => {
     if (hasFetched) {
       refetch();
     }
-    document.title = 'Upload a Pin to moody.';
   }, [hasFetched, refetch]);
-
+  document.title = 'Upload a Pin';
   if (!isAuthenticated)
     return (
       <>
@@ -253,7 +277,6 @@ export default function Upload() {
             </p>
           </div>
         </div>
-        <Navigate to="#login" replace />
       </>
     );
   return (
@@ -262,42 +285,106 @@ export default function Upload() {
         id="upload_pin"
         onSubmit={handleSubmit}
         encType="multipart/form-data"
+        className="mt-2 flex h-auto flex-col rounded-2xl px-8 py-10 outline outline-2 outline-slate-300"
       >
-        <FormControl
-          id="upload_form"
-          className="flex max-w-6xl flex-auto flex-col justify-center gap-10 rounded-xl border-2 p-10"
-        >
-          <header className="flex w-full flex-row justify-end">
-            <div className="flex w-full max-w-80 gap-1">
-              <Select
-                id="select-board"
-                name="board"
-                onChange={(e) =>
-                  setPinDetails({
-                    ...pinDetails,
-                    board: e.target.value,
-                  })
-                }
-                onClick={handleSelectClick}
-                icon={<ChevronDownIcon />}
-              >
-                <option value="" className="m-6 p-5">
-                  Choose a board
-                </option>
-                {!data && (
-                  <option>
-                    <Spinner size="xl" />
-                  </option>
-                )}
-                {data?.map((board: { id: string; title: string }) => (
-                  <option key={board.id} value={board.id}>
-                    {board.title}
-                  </option>
-                ))}
-              </Select>
+        <header className="flex w-full flex-row justify-end">
+          <div className="mt-[.3rem] flex w-full max-w-80 gap-1">
+            <Popover isLazy isOpen={isPopOverOpen} onClose={onPopOverClose}>
+              <PopoverTrigger>
+                <button
+                  type="button"
+                  onClick={handleSelectClick}
+                  className="flex w-full flex-row flex-wrap items-center justify-between rounded-lg px-5 outline outline-1 outline-slate-300"
+                >
+                  <h1>
+                    {pinDetails.board
+                      ? data?.find((board) => board.id === pinDetails.board)
+                          ?.title
+                      : 'Choose a board'}
+                  </h1>
+                  <span>
+                    <ChevronDownIcon boxSize="1.5rem" />
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <PopoverBody padding="0" maxH="14rem" overflowY="scroll">
+                  <div className="p-2">
+                    {!data && (
+                      <div>
+                        <Spinner size="xl" />
+                      </div>
+                    )}
+                    {data && data?.length < 1 && <div>No boards</div>}
+                    {data?.map(
+                      (board: {
+                        id: string;
+                        title: string;
+                        pins: Pin[];
+                        isPrivate: boolean;
+                      }) => (
+                        <button
+                          type="button"
+                          className="flex w-full px-2"
+                          key={board.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPinDetails({
+                              ...pinDetails,
+                              board: board.id,
+                            });
+                            refetch();
+                            onPopOverToggle();
+                          }}
+                        >
+                          <div className="flex w-full flex-row flex-wrap items-center gap-4">
+                            <div className="aspect-square w-12 overflow-hidden rounded-md">
+                              {board.pins.length > 0 && (
+                                <img src={board.pins[0].imgPath} />
+                              )}
+                            </div>
+                            <span className="flex w-full flex-1 items-start font-bold">
+                              {board.title}
+                            </span>
+                            {board.isPrivate && (
+                              <span className="">
+                                <LockIcon />
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </PopoverBody>
+                <PopoverFooter padding="0" height="100%" flexGrow="auto">
+                  <div className="flex w-full justify-end">
+                    <Button
+                      type="button"
+                      paddingX="20px"
+                      paddingY="10px"
+                      width="100%"
+                      onClick={onModalOpen}
+                      display="flex"
+                      height="100%"
+                      justifyContent="start"
+                      gap="20px"
+                      bg="transparent"
+                    >
+                      <span className="bg-action rounded-full p-2 text-white">
+                        <AddIcon boxSize={6} />
+                      </span>
+                      <h1>Create a board</h1>
+                    </Button>
+                  </div>
+                </PopoverFooter>
+              </PopoverContent>
+            </Popover>
+            <div>
               <Button
                 type="submit"
                 bg="actions.pink.50"
+                minW="6rem"
                 color="white"
                 _hover={{
                   background: 'actions.pink.100',
@@ -307,13 +394,16 @@ export default function Upload() {
                 Save Pin
               </Button>
             </div>
-          </header>
-          <section
-            id="form_body"
-            className="flex h-full flex-row flex-wrap justify-center gap-10"
-          >
-            {/* image */}
-            <aside className="relative flex min-w-[271px] max-w-[23rem] flex-auto flex-col justify-center">
+          </div>
+        </header>
+
+        <section
+          id="form_body"
+          className="flex h-full flex-row flex-wrap justify-center gap-10"
+        >
+          {/* image */}
+          <aside className="relative flex min-w-[271px] max-w-[23rem] flex-auto flex-col justify-center">
+            <FormControl>
               {showLabel && !showImagePin ? (
                 <div className="relative flex flex-1">
                   <FormLabel
@@ -333,7 +423,7 @@ export default function Upload() {
                       Click to Upload
                     </div>
                     <section className="text-pretty text-center">
-                      .jpg, png, .webp less than 20mb
+                      best .jpg, png, .webp less than 5mb
                     </section>
                   </FormLabel>
                 </div>
@@ -354,6 +444,10 @@ export default function Upload() {
                         setImagePin(false);
                         setShowLabel(true);
                         setImageFile(null);
+                        setPinDetails({
+                          ...pinDetails,
+                          img_blob: undefined,
+                        });
                       }}
                     >
                       <CloseIcon boxSize="1rem" />
@@ -361,7 +455,6 @@ export default function Upload() {
                   </section>
                 </>
               )}
-
               <Input
                 type="file"
                 name="upload_img"
@@ -369,19 +462,21 @@ export default function Upload() {
                 size="md"
                 className="hidden"
                 variant="unstyled"
-                accept=".jpg,.jpeg,.png,.webp"
-                onChange={(event) =>
-                  upload_img(event, pinDetails, setPinDetails)
-                }
+                accept="image/*"
+                onInput={(event) => {
+                  upload_img(event, pinDetails, setPinDetails);
+                }}
               />
-            </aside>
-            {/* pin details */}
-            <div className="m-2 w-full max-w-[31.75rem]">
-              <ul
-                id="form_pin_details"
-                className="flex w-full flex-auto flex-col"
-              >
-                <li>
+            </FormControl>
+          </aside>
+          {/* pin details */}
+          <div className="m-2 w-full max-w-[31.75rem]">
+            <ul
+              id="form_pin_details"
+              className="flex w-full flex-auto flex-col"
+            >
+              <li>
+                <FormControl>
                   <FormLabel htmlFor="title">Title</FormLabel>
                   <Input
                     variant="outline"
@@ -398,9 +493,11 @@ export default function Upload() {
                       })
                     }
                   ></Input>
-                </li>
+                </FormControl>
+              </li>
 
-                <li>
+              <li>
+                <FormControl>
                   <FormLabel htmlFor="description">Description</FormLabel>
                   <Textarea
                     variant="outline"
@@ -421,14 +518,16 @@ export default function Upload() {
                       });
                     }}
                   ></Textarea>
-                </li>
-                <li id="userSection" className="">
-                  <div className="flex items-center gap-2 py-2">
-                    <ProfileAvatar size="4rem" src={avatar} />
-                    <h4 className="">{username}</h4>
-                  </div>
-                </li>
-                <li>
+                </FormControl>
+              </li>
+              <li id="userSection" className="">
+                <div className="flex items-center gap-2 py-2">
+                  <ProfileAvatar size="4rem" src={avatar} />
+                  <h4 className="">{username}</h4>
+                </div>
+              </li>
+              <li>
+                <FormControl>
                   <FormLabel htmlFor="link">Link</FormLabel>
                   <Input
                     variant="outline"
@@ -445,8 +544,10 @@ export default function Upload() {
                       })
                     }
                   ></Input>
-                </li>
-                <li id="tag-container" className="flex w-full flex-col">
+                </FormControl>
+              </li>
+              <li id="tag-container" className="flex w-full flex-col">
+                <FormControl>
                   <h1 className="text-[1.55rem] text-slate-400">Add Tags</h1>
                   <FormHelperText marginTop="-2px" marginBottom="2px">
                     Press comma to confirm. Tags are not displayed publicly.
@@ -502,12 +603,20 @@ export default function Upload() {
                       </li>
                     </ul>
                   </FormLabel>
-                </li>
-              </ul>
-            </div>
-          </section>
-        </FormControl>
+                </FormControl>
+              </li>
+            </ul>
+          </div>
+        </section>
       </form>
+      <Modal isOpen={isModalOpen} onClose={onModalClose} size="xl" isCentered>
+        <ModalOverlay />
+        <ModalContent rounded="1rem" overflow="hidden">
+          <div className="size-full border p-5">
+            <CreateBoard onClose={onModalClose} />
+          </div>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

@@ -93,6 +93,7 @@ const startGraphQLYogaServer = async () => {
     bodyParser.json(),
     yoga,
   );
+
   // app.use((req, res, next) => {
   //   console.log('Session middleware check:', req.session);
   //   next();

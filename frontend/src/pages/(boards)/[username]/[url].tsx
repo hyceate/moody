@@ -1,15 +1,18 @@
-import { Navigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Box, ButtonGroup, Masonry } from 'gestalt';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Box, Masonry } from 'gestalt';
 import { Link } from 'react-router-dom';
 import { endpoint, fetchData } from '@/query/fetch';
-import { fetchBoardsByUsernameTitle, fetchUserData } from '@/query/queries';
-import { useEffect, useRef, useState } from 'react';
-import { GridComponent } from '@/components/gridItem';
+import {
+  deleteBoardSchema,
+  fetchBoardsByUsernameTitle,
+} from '@/query/queries';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { GridComponentWithUser } from '@/components/gridItem';
 import 'components/css/gestalt.css';
 import { ProfileAvatar } from '@/components/avatar';
 import { useAuth } from '@/context/authContext';
-import { User, Pin, Board } from '@/@types/interfaces';
+import { Pin, Board } from '@/@types/interfaces';
 import {
   Button,
   Divider,
@@ -27,23 +30,22 @@ import {
   Spinner,
   Switch,
   useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
+import { GraphQLClient } from 'graphql-request';
 
-const useUserData = (username: string) => {
-  return useQuery<User>({
-    queryKey: ['user', username, endpoint],
-    queryFn: () =>
-      fetchData<{ userByName: User }>(endpoint, fetchUserData, {
-        name: username,
-      }).then((data) => data.userByName),
-  });
-};
+interface deleteResponse {
+  deleteBoard: {
+    success: boolean;
+    message: string;
+  };
+}
+
 const useBoardData = (username: string, url: string) => {
   return useQuery<Board[]>({
     queryKey: ['boards', username, url],
     queryFn: () =>
       fetchData<{ boardsByUsernameTitle: Board[] }>(
-        endpoint,
         fetchBoardsByUsernameTitle,
         {
           username,
@@ -51,6 +53,12 @@ const useBoardData = (username: string, url: string) => {
         },
       ).then((data) => data.boardsByUsernameTitle),
     enabled: !!username && !!url,
+  });
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(endpoint, {
+    credentials: 'include',
   });
 };
 
@@ -67,6 +75,7 @@ export default function SingleBoard() {
     onOpen: onModalOpen,
     onClose: onModalClose,
   } = useDisclosure();
+  const toast = useToast();
   const { url, username } = useParams<{ url: string; username: string }>();
   const { isAuthenticated, user } = useAuth();
   const [pins, setPins] = useState<Pin[]>([]);
@@ -76,10 +85,40 @@ export default function SingleBoard() {
     username ?? '',
     url ?? '',
   );
-  const { data: boardUser, isLoading: isUserLoading } = useUserData(
-    username ?? '',
-  );
-  useEffect(() => {
+  const navigate = useNavigate();
+  const useDeleteBoard = useMutation({
+    mutationFn: async (boardId: string) => {
+      const client = createGraphQLClient();
+      const response: deleteResponse = await client.request(deleteBoardSchema, {
+        boardId,
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      const deleted = data.deleteBoard;
+      const status = deleted.success;
+      if (status === true) {
+        toast({
+          status: 'success',
+          title: 'Board deleted',
+        });
+        navigate(`/profile/${username}`);
+      }
+    },
+  });
+ 
+  if (boardData && !boardData[0]) {
+    navigate(`/`);
+    toast({
+      status: 'error',
+      title:'Unable to find board',
+      duration:1000,
+      isClosable:true
+    })
+    return 404;
+  }
+  
+  useMemo(() => {
     if (boardData && boardData.length > 0 && !showPins) {
       setPins(boardData[0].pins);
       setTimeout(() => {
@@ -88,23 +127,28 @@ export default function SingleBoard() {
     }
   }, [boardData, showPins]);
 
-  if (isUserLoading) return null;
-  if (boardUser && !boardUser.id) {
-    return <Navigate to="/" replace />;
-  }
-
   const board = boardData && boardData.length > 0 ? boardData[0] : undefined;
-  const avatar = boardUser?.avatarUrl;
+  const handleBoardDelete = async () => {
+    if (board) await useDeleteBoard.mutateAsync(board.id);
+  };
+  let avatar;
+  if(boardData && boardData[0].user){
+    avatar= boardData[0].user.avatarUrl;
+  }
   return (
     <>
-      <div className="mb-10 mt-5 flex w-full flex-col items-center justify-center gap-2">
+      <div className="mb-10 mt-5 flex w-full flex-col items-center justify-center gap-px">
         <section className="mb-2 flex w-full flex-col items-center justify-center">
           <h1 className="mt-2 text-3xl font-bold">{board?.title}</h1>
           <h2>{board?.pinCount} pins</h2>
         </section>
-        <Link to={`/profile/${username}`} className="font-bold">
-          <ProfileAvatar size="5rem" src={avatar} />
-        </Link>
+
+        <div className="aspect-square w-[5rem]">
+          <Link to={`/profile/${username}`} className="font-bold">
+            <ProfileAvatar size="5rem" src={avatar} />
+          </Link>
+        </div>
+
         <p className="mt-1">
           collection by{' '}
           <Link to={`/profile/${username}`} className="font-bold">
@@ -132,9 +176,14 @@ export default function SingleBoard() {
             layout="flexible"
             minCols={1}
             renderItem={({ data }) => (
-              <GridComponent data={data} showPins={showPins} />
+              <GridComponentWithUser data={data} showPins={showPins} showUser={true}/>
             )}
-            scrollContainer={() => scrollContainerRef.current || window}
+            scrollContainer={() => {
+              if (scrollContainerRef.current instanceof HTMLDivElement) {
+                return scrollContainerRef.current;
+              }
+              return document.body;
+            }}
           />
         )}
         {!board?.pins.length && !isBoardLoading && (
@@ -232,16 +281,17 @@ export default function SingleBoard() {
         <ModalOverlay />
         <ModalContent>
           <ModalBody>
-            <section className="items-wrap flex flex-col py-4">
+            <section className="items-wrap flex flex-col py-10">
               <h1 className="text-pretty text-xl">
                 Are you sure you want to delete &ldquo;
                 <span className="font-bold">{board?.title}</span>&rdquo;?
               </h1>
-              <div className="flex gap-4 self-end">
+              <div className="mt-10 flex gap-4 self-end">
                 <Button
                   bg="actions.pink.50"
                   color="white"
                   _hover={{ background: 'actions.pink.100' }}
+                  onClick={handleBoardDelete}
                 >
                   Yes
                 </Button>

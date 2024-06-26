@@ -1,18 +1,16 @@
-import { ObjectId, SortOrder } from 'mongoose';
 import { Pin } from '../models/pin.model';
 import { User } from '../models/user.model';
 import { Board } from '../models/board.model';
 import { Comment } from '../models/comment.model';
-import fs from 'fs';
+import { deletePinById } from './shared';
 import path from 'path';
+import fs from 'fs';
 
 interface User {
-  _id: ObjectId;
   username: string;
   email: string;
 }
 interface Pin {
-  _id: ObjectId;
   title: string;
   description: string;
   imgPath: string;
@@ -36,41 +34,40 @@ interface PinInput {
 }
 export const pinResolvers = {
   Query: {
-    pins: async (
-      _: any,
-      { sort }: { sort?: { field: keyof Pin; direction: 'ASC' | 'DESC' } },
-    ) => {
+    // all pins
+    pins: async (_: any, _args: any, context: any) => {
       try {
-        const sortOptions: { [key: string]: SortOrder } = {};
-        if (sort) {
-          const { field, direction } = sort;
-          sortOptions[field] = direction === 'ASC' ? 1 : -1;
-        } else {
-          sortOptions.createdAt = -1;
-        }
-        const pins = await Pin.find().populate('user').sort(sortOptions);
+        const currentUser = context.req.session.user
+          ? context.req.session.user.id
+          : null;
+        const pins = await Pin.find({
+          $or: [{ isPrivate: false }, { isPrivate: true, user: currentUser }],
+        })
+          .sort({ createdAt: -1 })
+          .populate('user');
 
         return pins;
       } catch (error) {
         throw new Error('Error fetching pins');
       }
     },
+    // profile pins
     pinsByUser: async (
       _: any,
-      { id }: { id: string },
-      { sort }: { sort?: { field: keyof Pin; direction: 'ASC' | 'DESC' } },
+      { userid }: { userid: string },
+      context: any,
     ) => {
       try {
-        const sortOptions: { [key: string]: SortOrder } = {};
-        if (sort) {
-          const { field, direction } = sort;
-          sortOptions[field] = direction === 'ASC' ? 1 : -1;
-        } else {
-          sortOptions.createdAt = -1;
-        }
-        const pinsByUser = await Pin.find({ user: id })
-          .populate('user comments.user')
-          .sort(sortOptions);
+        const currentUser = context.req.session.user
+          ? context.req.session.user.id
+          : null;
+        const pinsByUser = await Pin.find({
+          user: userid,
+          $or: [{ isPrivate: false }, { isPrivate: true, user: currentUser }],
+        }).populate('user', ['username', 'avatarUrl'])
+          .select({ comments: 0, tags: 0, description: 0, updatedAt: 0 })
+          .sort({ createdAt: -1 });
+
         return pinsByUser;
       } catch (error) {
         console.error('Error fetching pins by user:', error);
@@ -93,22 +90,35 @@ export const pinResolvers = {
     createPin: async (_: any, { input }: { input: PinInput }) => {
       try {
         const user = await User.findById(input.user);
-        console.log(input);
+        console.log('Create Pin Input: ', input);
         if (!user) {
           throw new Error('User not found');
         }
+        let boardId = null;
+        let isPrivate = false;
+        if (input.board) {
+          const board = await Board.findById(input.board, {
+            _id: 1,
+            isPrivate: 1,
+          });
+          if (!board) {
+            throw new Error('Board not found');
+          }
+          boardId = board._id;
+          isPrivate = board.isPrivate;
+        }
         const newPin = new Pin({
           ...input,
-          createdAt: new Date().toISOString(),
+          isPrivate: isPrivate,
         });
+        if (boardId) {
+          newPin.board = [boardId];
+        }
+        console.log('New Pin: ', newPin);
         await newPin.save();
-        if (
-          input.board &&
-          typeof input.board === 'string' &&
-          input.board.trim() !== ''
-        ) {
+        if (boardId) {
           await Board.findByIdAndUpdate(
-            input.board,
+            boardId,
             { $push: { pins: newPin._id } },
             { new: true, useFindAndModify: false },
           );
@@ -125,39 +135,62 @@ export const pinResolvers = {
           pin: serializedPin,
         };
       } catch (error) {
+        const imagePath = path.join(
+          __dirname,
+          `../../../frontend/public/${input.imgPath}`,
+        );
+        try {
+          fs.unlinkSync(imagePath);
+        } catch (error) {
+          console.error(`Error deleting image ${input.imgPath}:`, error);
+        }
         return {
           success: false,
-          // @ts-expect-error
-          message: error.message,
+          message: error,
           pin: null,
         };
       }
     },
     deletePin: async (_: any, { id }: { id: string }) => {
+      return deletePinById(id);
+    },
+    savePinToBoard: async (
+      _: any,
+      { pinId, boardId }: { pinId: string; boardId: string },
+      context: any,
+    ) => {
       try {
-        const pin = await Pin.findById(id);
-        if (!pin) {
-          throw new Error('Pin not found');
+        if (!context.user) {
+          return;
         }
-        await Board.updateMany({ pins: id }, { $pull: { pins: id } });
-        await Pin.findByIdAndDelete(id);
-        const imagePath = path.join(
-          __dirname,
-          `../../../frontend/public/${pin.imgPath}`,
-        );
-        try {
-          fs.unlinkSync(imagePath);
-        } catch (err) {
-          console.error(`Error deleting image ${imagePath}:`, err);
+        const pin = await Pin.findById(pinId);
+        const board = await Board.findById(boardId);
+        if (!pin || !board) {
+          return {
+            success: false,
+            message: 'Pin or Board not found',
+          };
+        }
+        if (board.user.toString() !== context.user.id) {
+          return {
+            success: false,
+            message: 'You are not authorized to edit board',
+          };
+        }
+        if (!board.pins.includes(pin._id)) {
+          board.pins.push(pin._id);
+          await board.save;
         }
         return {
           success: true,
-          message: 'Pin deleted successfully',
+          message: 'Pin saved to board successfully',
+          board,
         };
       } catch (error) {
         return {
           success: false,
-          message: (error as Error).message,
+          message: error,
+          board: null,
         };
       }
     },

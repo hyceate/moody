@@ -46,9 +46,9 @@ export default function Pin() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery<PinDeets>({
-    queryKey: ['pinDeets', id, endpoint, fetchPinData],
+    queryKey: ['pinDeets', id],
     queryFn: () =>
-      fetchData<{ pin: PinDeets }>(endpoint, fetchPinData, { id }).then(
+      fetchData<{ pin: PinDeets }>(fetchPinData, { id }).then(
         (data) => data.pin,
       ),
   });

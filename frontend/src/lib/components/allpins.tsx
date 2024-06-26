@@ -1,4 +1,4 @@
-import request from 'graphql-request';
+import { GraphQLClient } from 'graphql-request';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPinsSchema } from '@/query/queries';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -7,36 +7,37 @@ import { GridComponentWithUser } from '@/components/gridItem';
 import { restoreScroll } from '@/actions/scroll';
 import './css/gestalt.css';
 import { Spinner } from '@chakra-ui/react';
-interface User {
-  id: string;
-  username: string;
-  avatarUrl: string;
-}
-interface Pins {
-  id: string;
-  title: string;
-  description: string;
-  imgPath: string;
-  user: User;
-  dimensions?: { width: number; height: number };
-}
+import { Pin as Pins } from '@/@types/interfaces';
+import { endpoint } from '@/query/fetch';
+
 interface PinsResponse {
   pins: Pins[];
 }
+const createGraphQLClient = () => {
+  return new GraphQLClient(endpoint, {
+    credentials: 'include',
+  });
+};
 
 const AllPins = () => {
   const [pins, setPins] = useState<Pins[]>([]);
   const scrollContainerRef = useRef<HTMLElement | Window | null>(null);
-  const initialLoad = useRef(true);
   const [showPins, setShowPins] = useState(false);
 
+  const client = createGraphQLClient();
+  const abortController = new AbortController();
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['allpins'],
+    queryKey: ['indexPins'],
     queryFn: async () => {
       try {
-        const endpoint = 'http://localhost:3000/api/graphql';
-        const response: PinsResponse = await request(endpoint, fetchPinsSchema);
-        console.log(response.pins);
+        const response: PinsResponse = await client.request(fetchPinsSchema, {
+          signal: abortController.signal,
+        });
+        setTimeout(() => {
+          abortController.abort();
+        }, 2000);
+        // console.log(response.pins);
         return response.pins;
       } catch (error) {
         console.error('Error fetching pins:', error);
@@ -45,32 +46,29 @@ const AllPins = () => {
     },
   });
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     document.title = "moody's home";
-    if (data && initialLoad.current) {
+    if (data) {
       setPins(data);
     }
-  }, [data, isLoading]);
+  }, [data]);
   useEffect(() => {
     if (pins)
       setTimeout(() => {
         setShowPins(true);
-      }, 150);
-
-    if (showPins) {
-      restoreScroll();
-    }
-  }, [pins, showPins]);
+        restoreScroll();
+      }, 100);
+  }, [pins]);
 
   if (error) return <div>Error: {error.message}</div>;
-  if (!showPins && isLoading)
+  if (isLoading)
     return (
       <div
         id="index-pins"
         className="flex size-full items-center justify-center"
       >
         <div className="flex h-[80dvh] flex-1 items-center justify-center">
-          <Spinner boxSize={200}></Spinner>
+          <Spinner boxSize={150}></Spinner>
         </div>
       </div>
     );
@@ -78,24 +76,30 @@ const AllPins = () => {
   return (
     <div
       id="index-pins"
-      className="size-full px-20 pb-10 pt-8 max-lg:px-0"
+      className={`fadeIn ${showPins ? 'loaded' : ''} size-full px-20 pb-10 pt-8 max-lg:px-0`}
       ref={(el) => {
         scrollContainerRef.current = el;
       }}
-      tabIndex={0}
     >
       <Box>
-        {data && data.length > 0 && scrollContainerRef.current && (
+        {data && data.length > 0 && (
           <Masonry
-            columnWidth={230}
-            gutterWidth={20}
+            columnWidth={236}
+            gutterWidth={16}
             items={pins}
             layout="flexible"
+            virtualBufferFactor={0.3}
+            virtualize={true}
             minCols={2}
             renderItem={({ data }) => (
-              <GridComponentWithUser data={data} showPins={showPins} />
+              <GridComponentWithUser data={data} showPins={showPins} showUser={true} />
             )}
-            scrollContainer={() => scrollContainerRef.current || window}
+            scrollContainer={() => {
+              if (scrollContainerRef.current instanceof HTMLDivElement) {
+                return scrollContainerRef.current;
+              }
+              return document.body;
+            }}
           />
         )}
       </Box>
