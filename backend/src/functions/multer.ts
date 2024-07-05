@@ -13,10 +13,10 @@ const customStorage = (userId: string) =>
 
       try {
         await fs.promises.mkdir(uploadPath, { recursive: true });
-        cb(null, uploadPath); // Provide callback function with null error and destination path
+        cb(null, uploadPath);
       } catch (err: any) {
         console.error('Error creating upload directory:', err);
-        cb(null, err); // Provide callback function with error
+        cb(null, err);
       }
     },
     filename: async (req, file, cb) => {

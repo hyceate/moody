@@ -24,6 +24,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
   const { isAuthenticated, user } = useAuth();
   const { isOpen, onClose, onOpen } = useDisclosure();
   const [showBoards, setShowBoards] = useState(false);
+
   const userData = useQuery<User>({
     queryKey: ['user', username],
     queryFn: () =>
@@ -32,8 +33,9 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
       }).then((data) => data.userByName),
     enabled: !!username,
   });
+
   const savedPinsData = useQuery<Pin[]>({
-    queryKey: ['savedPins', username, userData.data?.id],
+    queryKey: ['savedPins', userData.data?.id],
     queryFn: () =>
       fetchData<{ pinsByUserBoards: Pin[] }>(fetchPinsByUserBoards, {
         userId: userData.data?.id,
@@ -51,7 +53,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
     enabled: !!username && userData.isSuccess,
   });
   const boardData = useQuery<Board[]>({
-    queryKey: ['boards', username, userData.data?.id],
+    queryKey: ['boards', userData.data?.id],
     queryFn: () =>
       fetchData<{ boardsByUser: Board[] }>(fetchUserBoards, {
         user_Id: userData.data?.id,
@@ -76,7 +78,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
   }
   return (
     <>
-      {userData.data && isAuthenticated && userData.data.id === user?.id && (
+      {isAuthenticated && userData.data && userData.data.id === user?.id && (
         <div className="mb-4 flex w-full justify-end px-8">
           <Button padding="0" onClick={onOpen}>
             <AddIcon boxSize={6} />
@@ -93,7 +95,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
         <div
           className={` fadeIn ${showBoards ? 'loaded' : ''} flex flex-wrap items-stretch justify-center gap-2`}
         >
-          {savedPinsData.data && savedPinsData.data?.length > 0 && (
+          {savedPinsData.data && savedPinsData.data.length > 0 && (
             <Link to={`/profile/${username}/pins`}>
               <div className="board-grid-item h-full">
                 <div className="boardImages h-[156px] w-[238px] ">
@@ -113,7 +115,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
                     </div>
                     <div
                       id="board-small-imgs"
-                      className="flex flex-col flex-nowrap gap-px self-start overflow-hidden bg-slate-200"
+                      className="flex flex-col flex-nowrap items-stretch justify-between gap-px self-start overflow-hidden"
                     >
                       {savedPinsData.data[1] ? (
                         <img
@@ -126,7 +128,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
                           className={`aspect-square w-full max-w-[4.85rem] object-cover`}
                         />
                       ) : (
-                        <div className="aspect-square w-full max-w-[4.85rem] bg-slate-200"></div>
+                        <div className="aspect-square w-[4.85rem] bg-slate-200"></div>
                       )}
                       {savedPinsData.data[2] ? (
                         <img
@@ -139,7 +141,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
                           className={`aspect-square w-full max-w-[4.85rem] object-cover`}
                         />
                       ) : (
-                        <div className="aspect-square w-full max-w-[4.85rem] bg-slate-200"></div>
+                        <div className="aspect-square w-[4.85rem] bg-slate-200"></div>
                       )}
                     </div>
                   </div>
@@ -154,7 +156,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
           {boardData.data?.map((board) => (
             <>
               {!board.isPrivate ||
-              (isAuthenticated && board.user.id === user?.id) ? (
+              (isAuthenticated && board.user && board.user.id === user?.id) ? (
                 <Link to={`/${username}/${board.url}`} key={board.id}>
                   <div className="board-grid-item relative h-full">
                     {board.isPrivate && (
@@ -181,7 +183,7 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
                         </div>
                         <div
                           id="board-small-imgs"
-                          className="flex flex-col flex-nowrap items-stretch justify-between gap-px self-start overflow-hidden "
+                          className="flex flex-col flex-nowrap items-stretch justify-between gap-px self-start overflow-hidden"
                         >
                           {board.pins[1] ? (
                             <img
@@ -227,7 +229,6 @@ export const SavedBoards = ({ username }: { username: string | undefined }) => {
         </div>
         <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered>
           <ModalOverlay />
-
           <ModalContent rounded="1rem" overflow="hidden">
             <div className="size-full border p-5">
               <CreateBoard onClose={onClose} />

@@ -22,6 +22,17 @@ query getPin($id: ID!) {
       username
       avatarUrl
     }
+    boards {
+      savedAt
+      board {
+        id
+        title
+        user {
+          id
+          username
+        }
+      }
+    }
     id
     title
     description
@@ -50,7 +61,6 @@ export const fetchUserData = `
     }
   }`;
 
-
 export const fetchUserPins = `
   query getPinsByUser($userid: ID!) {
     pinsByUser(userid: $userid) {
@@ -66,7 +76,6 @@ export const fetchUserPins = `
     }
   }`;
 
-
 export const fetchPinsByUserBoards = `
 query PinsByUserBoards($userId: ID!, $sort: Int = -1){
   pinsByUserBoards(userId: $userId, sort: $sort){
@@ -81,25 +90,6 @@ query PinsByUserBoards($userId: ID!, $sort: Int = -1){
       avatarUrl
     }
   }}`;
-
-export const createPinMutationSchema = `
-mutation CreatePin($input: CreatePinInput!) {
-  createPin(input: $input) {
-    success
-    message
-    pin {
-      id
-      title
-      description
-      imgPath
-      imgWidth
-      imgHeight
-      tags
-      link
-    }
-  }
-}
-`;
 
 export const fetchUserBoards = `
   query GetBoardsByUser($user_Id: ID!) {
@@ -166,6 +156,46 @@ export const fetchBoardsByUsernameTitle = `
     }
   }
 `;
+
+//! Mutations
+export const createPinMutationSchema = `
+mutation CreatePin($input: CreatePinInput!) {
+  createPin(input: $input) {
+    success
+    message
+    pin {
+      id
+      title
+      description
+      imgPath
+      imgWidth
+      imgHeight
+      tags
+      link
+    }
+  }
+}
+`;
+export const updatePinMutation = `
+mutation UpdatePin($input: UpdatePinInput!){
+  updatePin(input: $input){
+    success
+    message
+    pin {
+      id
+      title
+      description
+      link
+      boards{
+        board{
+          title
+        }
+        savedAt
+      }
+    }
+  }
+}`;
+
 export const createBoardGql = `
   mutation createBoard($input: CreateBoardInput!){
     createBoard(input: $input){

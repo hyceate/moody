@@ -1,5 +1,6 @@
+import { fixupConfigRules, fixupPluginRules } from '@eslint/compat';
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import graphqlEslint from "@graphql-eslint/eslint-plugin";
+import * as graphqlEslint from "@graphql-eslint/eslint-plugin"
 import prettier from "eslint-plugin-prettier";
 import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
@@ -18,11 +19,14 @@ const compat = new FlatCompat({
 
 export default [{
     ignores: ["**/dist", "**/.eslintrc.cjs"],
-}, ...compat.extends("eslint:recommended", "plugin:@typescript-eslint/recommended"), {
+}, ...fixupConfigRules(
+    compat.extends(
+        "eslint:recommended", "plugin:@typescript-eslint/recommended")
+    ), {
     plugins: {
-        "@typescript-eslint": typescriptEslint,
-        "@graphql-eslint": graphqlEslint,
-        prettier,
+        "@typescript-eslint": fixupPluginRules(typescriptEslint),
+        "@graphql-eslint": fixupPluginRules(graphqlEslint),
+        prettier: fixupPluginRules(prettier),
     },
 
     languageOptions: {
@@ -33,7 +37,6 @@ export default [{
 
         parser: tsParser,
     },
-
     rules: {
         "no-debugger": 0,
         "@typescript-eslint/no-unused-vars": "off",

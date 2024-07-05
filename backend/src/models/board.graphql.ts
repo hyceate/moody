@@ -34,7 +34,7 @@ const boardTypeDefs = gql`
   }
 
   input CreateBoardInput {
-    id: ID!
+    id: ID
     user: ID!
     title: String!
     description: String

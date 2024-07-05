@@ -12,12 +12,18 @@ import {
   MenuItem,
   useToast,
   Spinner,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerOverlay,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { ExternalLinkIcon, EditIcon } from '@chakra-ui/icons';
 import { useAuth } from '@/context/authContext';
 import { GraphQLClient } from 'graphql-request';
 import { ProfileAvatar } from '@/components/avatar';
-import { Pin as PinDeets } from '@/@types/interfaces';
+import { Pin as PinDetails } from '@/@types/interfaces';
+import { EditPin } from '@/components/editpin';
 
 interface DeleteResponse {
   deletePin: {
@@ -43,12 +49,17 @@ const createGraphQLClient = () => {
 export default function Pin() {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
+  const {
+    isOpen: drawerIsOpen,
+    onOpen: drawerOnOpen,
+    onClose: drawerOnClose,
+  } = useDisclosure();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { data, isLoading, error } = useQuery<PinDeets>({
-    queryKey: ['pinDeets', id],
+  const { data, isLoading, error } = useQuery<PinDetails>({
+    queryKey: ['pinDetails', id],
     queryFn: () =>
-      fetchData<{ pin: PinDeets }>(fetchPinData, { id }).then(
+      fetchData<{ pin: PinDetails }>(fetchPinData, { id }).then(
         (data) => data.pin,
       ),
   });
@@ -80,6 +91,7 @@ export default function Pin() {
   });
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const secondaryImgContainer = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (data?.imgPath && imageContainerRef.current) {
       const img = new Image();
@@ -202,8 +214,8 @@ export default function Pin() {
                           {data &&
                             isAuthenticated &&
                             data.user.id === user?.id && (
-                              <MenuItem>
-                                <span>Edit Pin</span>
+                              <MenuItem as="button" onClick={drawerOnOpen}>
+                                Edit Pin
                                 <EditIcon ml="5px" />
                               </MenuItem>
                             )}
@@ -321,6 +333,19 @@ export default function Pin() {
           </>
         )}
       </section>
+      <Drawer
+        isOpen={drawerIsOpen}
+        onClose={drawerOnClose}
+        placement="right"
+        size="sm"
+      >
+        <DrawerOverlay></DrawerOverlay>
+        <DrawerContent>
+          <DrawerBody>
+            <EditPin user={user} pin={data} />
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

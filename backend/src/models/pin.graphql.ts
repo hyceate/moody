@@ -12,6 +12,17 @@ const pinTypeDefs = gql`
     comment: String!
     commentTime: String
   }
+  type Board {
+    id: ID
+    user: User
+    title: String
+    description: String
+    isPrivate: Boolean
+  }
+  type BoardRef {
+    board: Board
+    savedAt: String
+  }
 
   type Pin {
     id: ID
@@ -26,8 +37,9 @@ const pinTypeDefs = gql`
     isPrivate: Boolean
     link: String
     comments: [Comment!]
-    board: [String!]
+    boards: [BoardRef!]
   }
+
   input PinsSortInput {
     field: String!
     direction: SortDirection!
@@ -63,6 +75,7 @@ const pinTypeDefs = gql`
   }
   type Mutation {
     createPin(input: CreatePinInput!): CreatePinResponse!
+    updatePin(input: UpdatePinInput!): CreatePinResponse!
     deletePin(id: ID!): DeletePinResponse!
     savePinToBoard(pinId: ID!, boardId: ID!): SavePinToBoardResponse!
     createComment(input: CreateCommentInput!): CreateCommentResponse!
@@ -79,6 +92,15 @@ const pinTypeDefs = gql`
     isPrivate: Boolean! = false
     link: String
     board: String
+  }
+  input UpdatePinInput {
+    id: ID!
+    user: ID!
+    title: String!
+    link: String
+    description: String
+    currentBoard: String
+    newBoard: String
   }
   input CreateCommentInput {
     user: ID!

@@ -46,7 +46,7 @@ const boardSchema: Schema<Board> = new Schema(
           type: Types.ObjectId,
           ref: 'Pin',
         },
-      ], // array of pins
+      ],
     },
   },
   {

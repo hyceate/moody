@@ -37,10 +37,9 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
       credentials: 'include',
     });
   };
-
+  const client = createGraphQLClient();
   const createBoard = useMutation({
     mutationFn: async (input: CreateBoardInput) => {
-      const client = createGraphQLClient();
       const response: CreateBoardResponse = await client.request(
         createBoardGql,
         { input },
@@ -49,10 +48,9 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
     },
     onSuccess: (data) => {
       const createBoard = data.createBoard;
-      // console.log(createBoard);
       const status = createBoard.success ? 'success' : 'error';
       if (status === 'success') {
-        queryClient.invalidateQueries({ queryKey: ['boards'] });
+        queryClient.invalidateQueries({ queryKey: ['boards', id] });
         toast({
           status: `${status}`,
           title: `${createBoard.message}`,

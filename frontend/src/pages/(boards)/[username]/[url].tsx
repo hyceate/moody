@@ -197,10 +197,16 @@ export default function SingleBoard() {
       <div className="mb-10 mt-5 flex w-full flex-col items-center justify-center gap-px">
         <section className="mb-2 flex w-full flex-col items-center justify-center">
           <div>
-            <h1 className="mt-2 text-3xl font-bold">
+            <h1 className="mt-2 flex items-center gap-2 text-3xl font-bold">
               {board?.title}
               {isAuthenticated && username === user?.username && (
-                <Button ref={drawerButtonRef} onClick={onDrawerOpen}>
+                <Button
+                  ref={drawerButtonRef}
+                  onClick={onDrawerOpen}
+                  padding="0"
+                  margin="0"
+                  rounded="100%"
+                >
                   <EditIcon />
                 </Button>
               )}
@@ -276,7 +282,7 @@ export default function SingleBoard() {
                 <input
                   name="boardUser"
                   type="hidden"
-                  value={board?.user.id}
+                  value={board?.user?.id}
                 ></input>
                 <input name="boardId" type="hidden" value={board?.id}></input>
                 <FormControl>

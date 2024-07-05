@@ -13,6 +13,7 @@ export default function AllSavedPins() {
   const [showPins, setShowPins] = useState<boolean>(false);
   const [pins, setPins] = useState<Pin[]>([]);
   const scrollContainerRef = useRef<HTMLElement | Window | null>(null);
+
   const userData = useQuery<User>({
     queryKey: ['user', username, endpoint],
     queryFn: () =>
@@ -69,7 +70,11 @@ export default function AllSavedPins() {
           layout="flexible"
           minCols={1}
           renderItem={({ data }) => (
-            <GridComponentWithUser data={data} showPins={showPins} showUser={true}/>
+            <GridComponentWithUser
+              data={data}
+              showPins={showPins}
+              showUser={true}
+            />
           )}
           scrollContainer={() => {
             if (scrollContainerRef.current instanceof HTMLDivElement) {

@@ -1,12 +1,7 @@
 import { ReactNode, createContext, useContext, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { checkAuth } from '@/actions/auth';
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  avatarUrl: string;
-}
+import { User } from '@/@types/interfaces';
 
 const AuthContext = createContext<{
   isAuthenticated: boolean | undefined;

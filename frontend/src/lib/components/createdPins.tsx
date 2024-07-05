@@ -35,7 +35,6 @@ export const CreatedPins = ({ username }: { username: string | undefined }) => {
     if (pinsData.data) {
       setPins(pinsData.data);
     }
-
   }, [pinsData]);
   useEffect(() => {
     if (pins) {
@@ -44,7 +43,6 @@ export const CreatedPins = ({ username }: { username: string | undefined }) => {
         restoreScroll();
       }, 100);
     }
-
   }, [pins]);
 
   if (pinsData.isLoading)
@@ -54,35 +52,44 @@ export const CreatedPins = ({ username }: { username: string | undefined }) => {
       </div>
     );
   return (
-    <div className={`fadeIn ${showPins ? 'loaded' : ''} mt-6 size-full`} ref={(el) => {
-      scrollContainerRef.current = el;
-    }}>
+    <div
+      className={`fadeIn ${showPins ? 'loaded' : ''} mt-6 size-full`}
+      ref={(el) => {
+        scrollContainerRef.current = el;
+      }}
+    >
       {pinsData.data && pinsData.data.length === 0 && (
         <div className="flex w-full items-center justify-center">
           No Pins to display
         </div>
       )}
-      {pinsData.data && pinsData.data.length > 0 && scrollContainerRef.current && (
-        <Masonry
-          columnWidth={200}
-          gutterWidth={20}
-          items={pins}
-          layout="flexible"
-          align="center"
-          minCols={2}
-          virtualBufferFactor={0.3}
+      {pinsData.data &&
+        pinsData.data.length > 0 &&
+        scrollContainerRef.current && (
+          <Masonry
+            columnWidth={200}
+            gutterWidth={20}
+            items={pins}
+            layout="flexible"
+            align="center"
+            minCols={2}
+            virtualBufferFactor={0.3}
             virtualize={true}
-          renderItem={({ data }) => (
-            <GridComponentWithUser data={data} showPins={showPins} showUser={false} />
-          )}
-          scrollContainer={() => {
-            if (scrollContainerRef.current instanceof HTMLDivElement) {
-              return scrollContainerRef.current;
-            }
-            return document.body;
-          }}
-        />
-      )}
+            renderItem={({ data }) => (
+              <GridComponentWithUser
+                data={data}
+                showPins={showPins}
+                showUser={false}
+              />
+            )}
+            scrollContainer={() => {
+              if (scrollContainerRef.current instanceof HTMLDivElement) {
+                return scrollContainerRef.current;
+              }
+              return document.body;
+            }}
+          />
+        )}
     </div>
   );
 };

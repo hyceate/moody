@@ -56,6 +56,7 @@ export const boardResolvers = {
           user: userId,
           $or: [{ isPrivate: false }, { isPrivate: true, user: currentUser }],
         })
+          .collation({ locale: 'en' })
           .sort({ title: 1 })
           .populate({
             path: 'pins',
@@ -98,26 +99,28 @@ export const boardResolvers = {
     },
     pinsByUserBoards: async (
       _: any,
-      { userId, sort }: { userId: string, sort: number },
+      { userId, sort }: { userId: string; sort: number },
       context: any,
     ) => {
       try {
         const currentUser = context.req.session.user
           ? context.req.session.user.id
           : null;
-          const sortOrder = sort === 1 ? 1 : -1;
+        const sortOrder = sort === 1 ? 1 : -1;
         const boards = await Board.find({
           user: userId,
           $or: [{ isPrivate: false }, { isPrivate: true, user: currentUser }],
-        }).populate({
-          path: 'pins',
-          model: Pin,
-          options: { sort: { createdAt: sortOrder } },
-          populate: {
-            path: 'user',
-            model: User,
-          },
-        }).sort({ createdAt: sortOrder });
+        })
+          .populate({
+            path: 'pins',
+            model: Pin,
+            options: { sort: { createdAt: sortOrder } },
+            populate: {
+              path: 'user',
+              model: User,
+            },
+          })
+          .sort({ createdAt: sortOrder });
         const pins = boards.flatMap((board) => board.pins);
         return pins;
       } catch (err) {
@@ -169,11 +172,21 @@ export const boardResolvers = {
       }
     },
     // to do
-    updateBoard: async (_: any, { input }: { input: BoardInput }, context:any) => {
-      const { id: boardId, title, user: boardUser, isPrivate, description } = input;
+    updateBoard: async (
+      _: any,
+      { input }: { input: BoardInput },
+      context: any,
+    ) => {
+      const {
+        id: boardId,
+        title,
+        user: boardUser,
+        isPrivate,
+        description,
+      } = input;
       const currentUser = context.req.session.user
-          ? context.req.session.user.id
-          : null;
+        ? context.req.session.user.id
+        : null;
 
       try {
         const board = await Board.findById(boardId).populate({
@@ -208,12 +221,12 @@ export const boardResolvers = {
           success: true,
           message: 'Board Updated',
           board: board,
-        }
+        };
       } catch (error) {
         return {
           success: false,
           message: error,
-          board: null
+          board: null,
         };
       }
     },
@@ -224,8 +237,8 @@ export const boardResolvers = {
       context: any,
     ) => {
       const currentUser = context.req.session.user
-          ? context.req.session.user.id
-          : null;
+        ? context.req.session.user.id
+        : null;
       try {
         const boardToDelete = await Board.findById(boardId)
           .select('id user title isPrivate')
@@ -250,27 +263,27 @@ export const boardResolvers = {
           const pin = await Pin.findById(pinId)
             .select('isPrivate user imgPath boardRefs')
             .populate('user', 'id');
-    
+
           if (pin?.user.id.toString() === currentUser) {
             const updatedPin = await Pin.findByIdAndUpdate(
               pinId,
               { $pull: { board: boardId } },
-              { new: true }
+              { new: true },
             );
-            if (updatedPin && updatedPin.board) {
+            if (updatedPin && updatedPin.boards) {
               if (boardToDelete.isPrivate) {
-                if (updatedPin.board.length === 0) {
+                if (updatedPin.boards.length === 0) {
                   await deletePinById(pinId);
                 }
               } else {
-                if (updatedPin.board.length === 0 && updatedPin.isPrivate) {
+                if (updatedPin.boards.length === 0 && updatedPin.isPrivate) {
                   await deletePinById(pinId);
                 }
               }
             }
           }
         }
-    
+
         await Board.findByIdAndDelete(boardId);
         return {
           success: true,

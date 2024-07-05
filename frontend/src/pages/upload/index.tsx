@@ -92,6 +92,7 @@ export default function Upload() {
       }).then((data) => data.boardsByUser),
     enabled: false,
   });
+
   const uploadImage = async (file: any, userId: any) => {
     try {
       const formData = new FormData();
@@ -137,8 +138,7 @@ export default function Upload() {
       if (status === `success`) {
         toast({
           render: () => (
-            <section className="bg-alert_success flex w-full flex-row flex-wrap items-center justify-start gap-4 rounded-md px-4 py-2 text-white relative">
-              
+            <section className="relative flex w-full flex-row flex-wrap items-center justify-start gap-4 rounded-md bg-alert_success px-4 py-2 text-white">
               <div className="flex shrink-0 flex-row flex-wrap items-start self-start">
                 <span className="">
                   <CheckCircleIcon color="white" boxSize="1.2rem" />
@@ -150,26 +150,32 @@ export default function Upload() {
                   Go to the{' '}
                   <button
                     onClick={() => navigate(`/pin/${createdPin.pin.id}`)}
-                    className="bg-action ml-1 rounded-md px-2 text-lg font-bold text-white"
+                    className="ml-1 rounded-md bg-action px-2 text-lg font-bold text-white"
                   >
                     new pin
                   </button>
                 </p>
               </div>
-              <button type="button" className="absolute top-0 right-0 p-1" onClick={()=>{toast.closeAll()}}>
+              <button
+                type="button"
+                className="absolute right-0 top-0 p-1"
+                onClick={() => {
+                  toast.closeAll();
+                }}
+              >
                 <CloseButton />
               </button>
             </section>
           ),
           isClosable: true,
-          duration: 3000,
+          duration: 2000,
         });
       } else {
         toast({
           status: `${status}`,
           title: `${createdPin.message}`,
           isClosable: true,
-          duration: 3000,
+          duration: 2000,
         });
       }
     },
@@ -177,6 +183,7 @@ export default function Upload() {
       console.error('Mutation error:', error);
     },
   });
+
   const upload_img = (event: any, pinDetails: any, setPinDetails: any) => {
     if (event.target.files && event.target.files[0]) {
       if (/image\/*/.test(event.target.files[0].type)) {
@@ -376,7 +383,7 @@ export default function Upload() {
                       gap="20px"
                       bg="transparent"
                     >
-                      <span className="bg-action rounded-full p-2 text-white">
+                      <span className="rounded-full bg-action p-2 text-white">
                         <AddIcon boxSize={6} />
                       </span>
                       <h1>Create a board</h1>
@@ -407,7 +414,7 @@ export default function Upload() {
           className="flex h-full flex-row flex-wrap justify-center gap-10"
         >
           {/* image */}
-          <aside className="relative flex min-w-[271px] max-w-[23rem] flex-auto flex-col justify-center">
+          <aside className="relative flex min-w-[271px] max-w-[23rem] flex-auto flex-col ">
             <FormControl>
               {showLabel && !showImagePin ? (
                 <div className="relative flex flex-1">
@@ -436,7 +443,7 @@ export default function Upload() {
                 <>
                   <section
                     id="image_pin"
-                    className=" relative flex h-auto max-w-[31.75rem] flex-auto flex-col"
+                    className="relative flex h-auto max-w-[31.75rem] flex-auto flex-col"
                   >
                     <img
                       src={pinDetails.img_blob}

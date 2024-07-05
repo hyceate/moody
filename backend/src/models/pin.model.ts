@@ -1,5 +1,11 @@
-import mongoose, { Schema, Types } from 'mongoose';
-interface Pin {
+import mongoose, { ObjectId, Schema, Types } from 'mongoose';
+
+interface BoardReference {
+  board: Types.ObjectId;
+  savedAt: Date;
+}
+export interface PinType {
+  _id: Types.ObjectId;
   title: string;
   description?: string;
   imgPath: string;
@@ -10,11 +16,11 @@ interface Pin {
   tags?: string[];
   isPrivate: boolean;
   link?: string;
-  board?: Types.ObjectId[];
+  boards?: BoardReference[];
   comments: Types.ObjectId[];
 }
 
-const pinSchema: Schema<Pin> = new Schema(
+const pinSchema: Schema<PinType> = new Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -57,11 +63,17 @@ const pinSchema: Schema<Pin> = new Schema(
       trim: true,
       type: String,
     },
-    board: [
+    boards: [
       {
-        type: Schema.Types.ObjectId,
-        ref: 'board',
-        default: [],
+        board: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'board',
+          default: [],
+        },
+        savedAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
     comments: [

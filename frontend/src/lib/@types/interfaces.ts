@@ -15,15 +15,21 @@ export interface Pin {
   imgHeight: number;
   user: User;
   comments: [string];
+  boards: [
+    {
+      board: Board;
+      savedAt: string;
+    },
+  ];
 }
 
 export interface Board {
-  user: User;
+  user?: User;
   id: string;
   title: string;
-  description: string;
-  url: string;
+  description?: string;
+  url?: string;
   isPrivate: boolean;
   pins: Pin[];
-  pinCount: number;
+  pinCount?: number;
 }
