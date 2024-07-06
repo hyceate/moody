@@ -59,6 +59,7 @@ export const EditPin = ({
     onClose: onPopOverClose,
   } = useDisclosure();
   const toast = useToast();
+
   const { data, isSuccess, refetch } = useQuery({
     queryKey: ['boards', userId],
     queryFn: () =>
@@ -67,6 +68,7 @@ export const EditPin = ({
       }).then((data) => data.boardsByUser),
     enabled: false,
   });
+
   const queryClient = useQueryClient();
   const createGraphQLClient = () => {
     return new GraphQLClient(endpoint, {

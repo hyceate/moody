@@ -157,7 +157,18 @@ export const fetchBoardsByUsernameTitle = `
   }
 `;
 
-//! Mutations
+// * Mutations
+export const savePinToBoard = `
+mutation SavePinToBoard($pinId: ID!, $boardId: ID!){
+  savePinToBoard(pinId: $pinID, boardId: $boardId) {
+    success
+    message
+    board {
+      id
+      title
+    }
+  }
+}`;
 export const createPinMutationSchema = `
 mutation CreatePin($input: CreatePinInput!) {
   createPin(input: $input) {

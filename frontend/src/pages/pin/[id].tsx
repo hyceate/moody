@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchData } from '@/query/fetch';
-import { fetchPinData } from '@/query/queries';
-import { useEffect, useRef } from 'react';
+import {
+  fetchBoardsForForm,
+  fetchPinData,
+  savePinToBoard,
+} from '@/query/queries';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import '@/components/css/transitions.css';
 import {
@@ -19,13 +23,27 @@ import {
   useDisclosure,
   Popover,
   PopoverTrigger,
+  PopoverFooter,
+  PopoverBody,
+  PopoverContent,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  FormControl,
 } from '@chakra-ui/react';
-import { ExternalLinkIcon, EditIcon } from '@chakra-ui/icons';
+import {
+  ExternalLinkIcon,
+  EditIcon,
+  ChevronDownIcon,
+  LockIcon,
+  AddIcon,
+} from '@chakra-ui/icons';
 import { useAuth } from '@/context/authContext';
 import { GraphQLClient } from 'graphql-request';
 import { ProfileAvatar } from '@/components/avatar';
-import { Pin as PinDetails } from '@/@types/interfaces';
+import { Board, Pin as PinDetails, Pin as Pins } from '@/@types/interfaces';
 import { EditPin } from '@/components/editpin';
+import { CreateBoard } from '@/components/createBoard';
 
 interface DeleteResponse {
   deletePin: {
@@ -47,6 +65,7 @@ const createGraphQLClient = () => {
     credentials: 'include',
   });
 };
+const client = createGraphQLClient();
 
 export default function Pin() {
   const { id } = useParams<{ id: string }>();
@@ -56,18 +75,69 @@ export default function Pin() {
     onOpen: drawerOnOpen,
     onClose: drawerOnClose,
   } = useDisclosure();
+  const [hasFetched, setHasFetched] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
+  const {
+    isOpen: isModalOpen,
+    onClose: onModalClose,
+    onOpen: onModalOpen,
+  } = useDisclosure();
+  const {
+    isOpen: isPopOverOpen,
+    onToggle: onPopOverToggle,
+    onClose: onPopOverClose,
+  } = useDisclosure();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { data, isLoading, error } = useQuery<PinDetails>({
+  const {
+    data: boardData,
+    isSuccess: boardIsSuccess,
+    refetch,
+  } = useQuery({
+    queryKey: ['boards', user!.id],
+    queryFn: () =>
+      fetchData<{ boardsByUser: Board[] }>(fetchBoardsForForm, {
+        userId: user!.id,
+      }).then((data) => data.boardsByUser),
+    enabled: false,
+  });
+  const {
+    data: pinData,
+    isLoading: pinIsLoading,
+    error,
+  } = useQuery<PinDetails>({
     queryKey: ['pinDetails', id],
     queryFn: () =>
       fetchData<{ pin: PinDetails }>(fetchPinData, { id }).then(
         (data) => data.pin,
       ),
   });
+  const savePin = useMutation({
+    mutationFn: async ({ id, boardId }: { id: string; boardId: string }) => {
+      const response = await client.request(savePinToBoard, {
+        pinId: id,
+        boardId: boardId,
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      console.log(data);
+    },
+  });
+  const handleSavePin = async (e: FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData();
+    const pinId = id;
+    const boardId = formData.get('board');
+    const input = {
+      pinId,
+      boardId,
+    };
+    await savePin.mutateAsync(input);
+  };
+
   const deletePinMutation = useMutation({
     mutationFn: async (id: string) => {
-      const client = createGraphQLClient();
       const response: DeleteResponse = await client.request(deletePin, {
         id: id,
       });
@@ -87,19 +157,27 @@ export default function Pin() {
       await deletePinMutation.mutateAsync(id);
     }
   };
-  useEffect(() => {
-    document.title = `${data?.title || `${user?.username}'s pin`}`;
-    window.scrollTo(0, 0);
-  });
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-  const secondaryImgContainer = useRef<HTMLDivElement>(null);
+  const handleBoardSelect = () => {
+    onPopOverToggle();
+    if (!hasFetched) {
+      setHasFetched(true);
+    }
+    refetch();
+  };
 
   useEffect(() => {
-    if (data?.imgPath && imageContainerRef.current) {
+    document.title = `${pinData?.title || `${user?.username}'s pin`}`;
+    window.scrollTo(0, 0);
+  });
+
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const secondaryImgContainer = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (pinData?.imgPath && imageContainerRef.current) {
       const img = new Image();
-      img.src = data.imgPath;
+      img.src = pinData.imgPath;
       img.onload = () => {
-        const aspectRatio = data.imgWidth / data.imgHeight;
+        const aspectRatio = pinData.imgWidth / pinData.imgHeight;
         const container = imageContainerRef.current;
         const secondaryContainer = secondaryImgContainer.current;
         if (container && secondaryContainer) {
@@ -141,10 +219,24 @@ export default function Pin() {
         }
       };
     }
-  }, [data]);
+  }, [pinData]);
 
   useEffect(() => {
-    if (!isLoading && data) {
+    if (boardIsSuccess && boardData) {
+      if (pinData?.boards && pinData.boards.length > 0) {
+        const latestBoardId = pinData.boards[0].board?.id;
+        const latestBoard = boardData.find(
+          (board) => board.id === latestBoardId,
+        );
+        setSelectedBoard(latestBoard || null);
+      } else {
+        setSelectedBoard(null);
+      }
+    }
+  }, [boardIsSuccess, boardData, pinData?.boards]);
+
+  useEffect(() => {
+    if (!pinIsLoading && pinData) {
       document.querySelectorAll('.fadeIn').forEach((element) => {
         element.classList.remove('loaded');
         setTimeout(() => {
@@ -152,9 +244,9 @@ export default function Pin() {
         }, 0);
       });
     }
-  }, [isLoading, data]);
+  }, [pinIsLoading, pinData]);
 
-  if (isLoading)
+  if (pinIsLoading)
     return (
       <div className="size-full flex-auto">
         <div className="flex size-full h-[80dvh] flex-auto flex-col items-center justify-center">
@@ -172,7 +264,7 @@ export default function Pin() {
         className="fadeIn relative mb-5 mt-3 flex size-full max-w-[63.5rem] flex-row flex-wrap justify-center rounded-[2rem] bg-white max-[1055px]:max-w-[31.75rem]"
         style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 1px 20px 0px' }}
       >
-        {!isLoading && data && (
+        {!pinIsLoading && pinData && (
           <>
             <div
               id="closeup"
@@ -188,10 +280,10 @@ export default function Pin() {
                   ref={secondaryImgContainer}
                 >
                   <img
-                    src={data?.imgPath}
+                    src={pinData?.imgPath}
                     className="w-full rounded-[inherit] object-contain"
                     loading="eager"
-                    alt={data?.title || data?.description || 'Image'}
+                    alt={pinData?.title || pinData?.description || 'Image'}
                   />
                 </div>
               </div>
@@ -207,28 +299,31 @@ export default function Pin() {
                   className="sticky top-[64px] z-[2] w-full rounded-[0_2rem_0_0] bg-white"
                 >
                   <div className="min-h-[5.75rem] pt-8">
-                    <div id="actions_menu" className="">
+                    <div
+                      id="actions_menu"
+                      className="flex flex-row justify-between pr-10"
+                    >
                       <Menu>
                         <MenuButton as={Button} padding="0" margin="0">
                           <div className="mb-3 p-0 text-3xl">...</div>
                         </MenuButton>
                         <MenuList>
-                          {data &&
+                          {pinData &&
                             isAuthenticated &&
-                            data.user.id === user?.id && (
+                            pinData.user.id === user?.id && (
                               <MenuItem as="button" onClick={drawerOnOpen}>
                                 Edit Pin
                                 <EditIcon ml="5px" />
                               </MenuItem>
                             )}
                           <MenuItem>
-                            <a href={`${data.imgPath}`} download>
+                            <a href={`${pinData.imgPath}`} download>
                               Download Image
                             </a>
                           </MenuItem>
-                          {data &&
+                          {pinData &&
                             isAuthenticated &&
-                            data.user.id === user?.id && (
+                            pinData.user.id === user?.id && (
                               <MenuItem
                                 as={Button}
                                 justifyContent="start"
@@ -244,14 +339,139 @@ export default function Pin() {
                             )}
                         </MenuList>
                       </Menu>
-                      <form>
-                        <Popover>
-                          <PopoverTrigger>
-                            <button type="button"></button>
-                          </PopoverTrigger>
-                        </Popover>
-                        <button type="button">Save Pin</button>
-                      </form>
+                      {isAuthenticated && (
+                        <form>
+                          <FormControl
+                            id="boards"
+                            className="flex flex-row gap-1"
+                          >
+                            <Popover
+                              isLazy
+                              isOpen={isPopOverOpen}
+                              onClose={onPopOverClose}
+                            >
+                              <PopoverTrigger>
+                                <button
+                                  type="button"
+                                  className="flex w-full min-w-36 flex-row flex-wrap items-center justify-between rounded-lg px-5 outline outline-1 outline-slate-300"
+                                  onClick={handleBoardSelect}
+                                >
+                                  <h1 id="selectedBoard">
+                                    {selectedBoard ? selectedBoard.title : null}
+                                  </h1>
+                                  <span>
+                                    <ChevronDownIcon boxSize="1.5rem" />
+                                  </span>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                padding="0"
+                                margin="0"
+                                display="flex"
+                              >
+                                <PopoverBody
+                                  padding="0"
+                                  maxH="14rem"
+                                  overflowY="scroll"
+                                >
+                                  <div className="items center flex w-full flex-col justify-center gap-px p-2">
+                                    {!boardData && (
+                                      <div>
+                                        <Spinner size="xl" />
+                                      </div>
+                                    )}
+                                    {boardData && boardData?.length < 1 && (
+                                      <div>No boards</div>
+                                    )}
+                                    {boardData && (
+                                      <button
+                                        type="button"
+                                        className="flex w-full flex-row flex-wrap items-center justify-center rounded-lg px-5 py-2 font-bold hover:bg-slate-200"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          setSelectedBoard(null);
+                                          onPopOverToggle();
+                                        }}
+                                      >
+                                        Remove from board
+                                      </button>
+                                    )}
+                                    {boardData?.map(
+                                      (board: {
+                                        id: string;
+                                        title: string;
+                                        pins: Pins[];
+                                        isPrivate: boolean;
+                                      }) => (
+                                        <button
+                                          type="button"
+                                          className="flex w-full"
+                                          key={board.id}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            setSelectedBoard(board);
+                                            onPopOverToggle();
+                                          }}
+                                        >
+                                          <div className="flex w-full flex-row flex-wrap items-center gap-4 rounded-md p-2 hover:bg-slate-200">
+                                            <div className="aspect-square w-12 overflow-hidden rounded-md">
+                                              {board.pins.length > 0 && (
+                                                <img
+                                                  src={board.pins[0].imgPath}
+                                                  alt={`Board ${board.title}`}
+                                                />
+                                              )}
+                                            </div>
+                                            <span className="flex w-full flex-1 items-start font-bold">
+                                              {board.title}
+                                            </span>
+                                            {board.isPrivate && (
+                                              <span className="">
+                                                <LockIcon />
+                                              </span>
+                                            )}
+                                          </div>
+                                        </button>
+                                      ),
+                                    )}
+                                  </div>
+                                </PopoverBody>
+                                <PopoverFooter
+                                  padding="0"
+                                  height="100%"
+                                  flexGrow="auto"
+                                >
+                                  <div className="flex w-full justify-end">
+                                    <Button
+                                      type="button"
+                                      paddingX="20px"
+                                      paddingY="10px"
+                                      width="100%"
+                                      onClick={onModalOpen}
+                                      display="flex"
+                                      height="100%"
+                                      justifyContent="start"
+                                      gap="20px"
+                                      bg="transparent"
+                                    >
+                                      <span className="rounded-full bg-action p-2 text-white">
+                                        <AddIcon boxSize={6} />
+                                      </span>
+                                      <h1>Create a board</h1>
+                                    </Button>
+                                  </div>
+                                </PopoverFooter>
+                              </PopoverContent>
+                            </Popover>
+                            <button
+                              type="button"
+                              className="text-nowrap rounded-md bg-rose-500 p-2 font-bold text-white hover:bg-rose-600"
+                            >
+                              Save
+                            </button>
+                          </FormControl>
+                        </form>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -261,43 +481,48 @@ export default function Pin() {
                   className="flex h-full flex-col overflow-auto"
                 >
                   <div className="mt-4 flex flex-auto flex-col gap-8 pr-8">
-                    {data?.link && (
+                    {pinData?.link && (
                       <div id="pinLink" className="">
                         <a
-                          href={`${data.link}`}
+                          href={`${pinData.link}`}
                           className="flex min-w-0 underline underline-offset-4"
                         >
                           <ExternalLinkIcon boxSize={6} marginInline={1} />
-                          <h1 className="flex-1 truncate">{data.link}</h1>
+                          <h1 className="flex-1 truncate">{pinData.link}</h1>
                         </a>
                       </div>
                     )}
                     <div id="pin_desc" className="pr-2 empty:hidden">
-                      {data?.title && (
+                      {pinData?.title && (
                         <div id="pinTitle" className="">
-                          <h1 className="text-4xl font-bold">{data.title}</h1>
+                          <h1 className="text-4xl font-bold">
+                            {pinData.title}
+                          </h1>
                         </div>
                       )}
-                      {data?.description && (
+                      {pinData?.description && (
                         <div id="pinDesc" className="">
                           <p className="text-balance text-lg">
-                            {data.description}
+                            {pinData.description}
                           </p>
                         </div>
                       )}
                     </div>
                     <div className="flex flex-row flex-wrap items-center gap-5">
                       <Link
-                        to={`/profile/${data.user.username}`}
+                        to={`/profile/${pinData.user.username}`}
                         className="flex flex-row flex-wrap items-center gap-5"
                       >
-                        <ProfileAvatar size="4rem" src={data.user.avatarUrl} />
-                        <h1 className="text-xl">{data.user.username}</h1>
+                        <ProfileAvatar
+                          size="4rem"
+                          src={pinData.user.avatarUrl}
+                        />
+                        <h1 className="text-xl">{pinData.user.username}</h1>
                       </Link>
                     </div>
                     <div className="">
                       <h1 className="text-xl font-medium">Comments</h1>
-                      {data.comments.length < 1 && (
+                      {pinData.comments.length < 1 && (
                         <div className="my-5">No Comments yet!</div>
                       )}
                     </div>
@@ -343,6 +568,14 @@ export default function Pin() {
           </>
         )}
       </section>
+      <Modal isOpen={isModalOpen} onClose={onModalClose} size="xl" isCentered>
+        <ModalOverlay />
+        <ModalContent rounded="1rem" overflow="hidden">
+          <div className="size-full border p-5">
+            <CreateBoard onClose={onModalClose} />
+          </div>
+        </ModalContent>
+      </Modal>
       <Drawer
         isOpen={drawerIsOpen}
         onClose={drawerOnClose}
@@ -352,7 +585,7 @@ export default function Pin() {
         <DrawerOverlay></DrawerOverlay>
         <DrawerContent>
           <DrawerBody>
-            <EditPin user={user} pin={data} />
+            <EditPin user={user} pin={pinData} />
           </DrawerBody>
         </DrawerContent>
       </Drawer>

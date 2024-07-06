@@ -281,9 +281,12 @@ export const pinResolvers = {
       { pinId, boardId }: { pinId: string; boardId: string },
       context: any,
     ) => {
+      const currentUser = context.req.session.user
+        ? context.req.session.user.id
+        : null;
       try {
-        if (!context.user) {
-          return;
+        if (!currentUser) {
+          return { success: false, message: 'You are not logged in.' };
         }
         const pin = await Pin.findById(pinId);
         const board = await Board.findById(boardId);
@@ -293,16 +296,16 @@ export const pinResolvers = {
             message: 'Pin or Board not found',
           };
         }
-        if (board.user.toString() !== context.user.id) {
+        if (board.user.toString() !== currentUser) {
           return {
             success: false,
             message: 'You are not authorized to edit board',
           };
         }
-        if (!board.pins.includes(pin._id)) {
-          board.pins.push(pin._id);
-          await board.save;
+        if (board.pins.includes(pin._id)) {
+          return { success: false, message: 'Already saved in board' };
         }
+        await board.save();
         return {
           success: true,
           message: 'Pin saved to board successfully',
