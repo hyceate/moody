@@ -121,8 +121,19 @@ export const boardResolvers = {
             },
           })
           .sort({ createdAt: sortOrder });
-        const pins = boards.flatMap((board) => board.pins);
-        return pins;
+        const uniquePinIds = new Set();
+        const uniquePins = [];
+
+        for (const board of boards) {
+          for (const pin of board.pins) {
+            if (!uniquePinIds.has(pin.id)) {
+              uniquePinIds.add(pin.id);
+              uniquePins.push(pin);
+            }
+          }
+        }
+
+        return uniquePins;
       } catch (err) {
         return err;
       }
@@ -171,7 +182,7 @@ export const boardResolvers = {
         }
       }
     },
-    // to do
+
     updateBoard: async (
       _: any,
       { input }: { input: BoardInput },
@@ -230,7 +241,7 @@ export const boardResolvers = {
         };
       }
     },
-    // to test
+
     deleteBoard: async (
       _: any,
       { boardId }: { boardId: string },

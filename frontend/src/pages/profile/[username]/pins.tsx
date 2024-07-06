@@ -1,6 +1,6 @@
 import { Pin, User } from '@/@types/interfaces';
 import { GridComponentWithUser } from '@/components/gridItem';
-import { endpoint, fetchData } from '@/query/fetch';
+import { fetchData } from '@/query/fetch';
 import { fetchPinsByUserBoards, fetchUserData } from '@/query/queries';
 import { Spinner } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ export default function AllSavedPins() {
   const scrollContainerRef = useRef<HTMLElement | Window | null>(null);
 
   const userData = useQuery<User>({
-    queryKey: ['user', username, endpoint],
+    queryKey: ['user', username],
     queryFn: () =>
       fetchData<{ userByName: User }>(fetchUserData, {
         name: username,

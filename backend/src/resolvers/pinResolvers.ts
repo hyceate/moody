@@ -210,7 +210,7 @@ export const pinResolvers = {
 
         const updateBoards = async (
           currentBoardId: string,
-          newBoardId: string | null, // Allow for null to signify removal
+          newBoardId: string,
           pin: PinType,
         ) => {
           let oldBoard, newBoardData;
@@ -254,16 +254,17 @@ export const pinResolvers = {
               pin.isPrivate = true;
             }
           } else {
-            // If no new board, just remove the pin from the current board
-            pin.boards = pin.boards!.filter(
-              (b) => b.board._id.toString() !== currentBoardId,
-            );
+            return { success: false, message: 'Unable to add to new board' };
+            // // If no new board, just remove the pin from the current board
+            // pin.boards = pin.boards!.filter(
+            //   (b) => b.board._id.toString() !== currentBoardId,
+            // );
           }
         };
 
         await updateBoards(currentBoard!, newBoard!, pinUpdate);
-
         await pinUpdate.save();
+
         return {
           success: true,
           message: 'Pin updated successfully',
@@ -273,9 +274,7 @@ export const pinResolvers = {
         return error;
       }
     },
-    deletePin: async (_: any, { id }: { id: string }) => {
-      return deletePinById(id);
-    },
+
     savePinToBoard: async (
       _: any,
       { pinId, boardId }: { pinId: string; boardId: string },
@@ -305,20 +304,30 @@ export const pinResolvers = {
         if (board.pins.includes(pin._id)) {
           return { success: false, message: 'Already saved in board' };
         }
-        await board.save();
+        await Board.findByIdAndUpdate(boardId, {
+          $push: { pins: pin._id },
+        });
+        pin.boards = [
+          ...pin.boards!.filter((b) => b.board.toString() !== boardId),
+          { board: board._id, savedAt: new Date() },
+        ];
+        await pin.save();
         return {
           success: true,
           message: 'Pin saved to board successfully',
-          board,
         };
       } catch (error) {
         return {
           success: false,
           message: error,
-          board: null,
         };
       }
     },
+
+    deletePin: async (_: any, { id }: { id: string }) => {
+      return deletePinById(id);
+    },
+
     createComment: async (
       _: any,
       {

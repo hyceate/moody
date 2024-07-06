@@ -77,6 +77,7 @@ const pinTypeDefs = gql`
     createPin(input: CreatePinInput!): CreatePinResponse!
     updatePin(input: UpdatePinInput!): CreatePinResponse!
     deletePin(id: ID!): DeletePinResponse!
+    deletePinFromBoard(id: ID!): DeletePinResponse!
     savePinToBoard(pinId: ID!, boardId: ID!): SavePinToBoardResponse!
     createComment(input: CreateCommentInput!): CreateCommentResponse!
   }

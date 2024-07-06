@@ -42,14 +42,20 @@ import { useAuth } from '@/context/authContext';
 import { GraphQLClient } from 'graphql-request';
 import { ProfileAvatar } from '@/components/avatar';
 import { Board, Pin as PinDetails, Pin as Pins } from '@/@types/interfaces';
-import { EditPin } from '@/components/editpin';
+import { EditPin } from '@/components/editPin';
 import { CreateBoard } from '@/components/createBoard';
+import { AddComments } from '@/components/addComments';
 
 interface DeleteResponse {
   deletePin: {
     success: boolean;
     message: string;
-    errorType: string;
+  };
+}
+interface SaveResponse {
+  savePinToBoard: {
+    success: boolean;
+    message: string;
   };
 }
 const deletePin = `
@@ -89,18 +95,21 @@ export default function Pin() {
   } = useDisclosure();
   const toast = useToast();
   const queryClient = useQueryClient();
+
   const {
     data: boardData,
     isSuccess: boardIsSuccess,
+    isPending: boardIsPending,
     refetch,
   } = useQuery({
-    queryKey: ['boards', user!.id],
+    queryKey: ['boards', user?.id],
     queryFn: () =>
       fetchData<{ boardsByUser: Board[] }>(fetchBoardsForForm, {
-        userId: user!.id,
+        userId: user?.id,
       }).then((data) => data.boardsByUser),
     enabled: false,
   });
+
   const {
     data: pinData,
     isLoading: pinIsLoading,
@@ -113,27 +122,46 @@ export default function Pin() {
       ),
   });
   const savePin = useMutation({
-    mutationFn: async ({ id, boardId }: { id: string; boardId: string }) => {
-      const response = await client.request(savePinToBoard, {
-        pinId: id,
-        boardId: boardId,
+    mutationFn: async ({
+      pinId,
+      boardId,
+    }: {
+      pinId: string;
+      boardId: string | undefined;
+    }) => {
+      const response: SaveResponse = await client.request(savePinToBoard, {
+        pinId,
+        boardId,
       });
       return response;
     },
     onSuccess: (data) => {
-      console.log(data);
+      const saveResponse = data.savePinToBoard;
+      switch (saveResponse.success) {
+        case true:
+          toast({
+            status: 'success',
+            title: saveResponse.message,
+          });
+          break;
+        default:
+          toast({
+            status: 'error',
+            title: saveResponse.message,
+          });
+          break;
+      }
     },
   });
   const handleSavePin = async (e: FormEvent) => {
     e.preventDefault();
-    const formData = new FormData();
-    const pinId = id;
-    const boardId = formData.get('board');
+    const pinId = id as string;
+    const boardId = selectedBoard?.id;
     const input = {
       pinId,
       boardId,
     };
-    await savePin.mutateAsync(input);
+    if (input) await savePin.mutateAsync(input);
   };
 
   const deletePinMutation = useMutation({
@@ -383,19 +411,7 @@ export default function Pin() {
                                     {boardData && boardData?.length < 1 && (
                                       <div>No boards</div>
                                     )}
-                                    {boardData && (
-                                      <button
-                                        type="button"
-                                        className="flex w-full flex-row flex-wrap items-center justify-center rounded-lg px-5 py-2 font-bold hover:bg-slate-200"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          setSelectedBoard(null);
-                                          onPopOverToggle();
-                                        }}
-                                      >
-                                        Remove from board
-                                      </button>
-                                    )}
+
                                     {boardData?.map(
                                       (board: {
                                         id: string;
@@ -465,7 +481,9 @@ export default function Pin() {
                             </Popover>
                             <button
                               type="button"
-                              className="text-nowrap rounded-md bg-rose-500 p-2 font-bold text-white hover:bg-rose-600"
+                              className="text-nowrap rounded-md bg-rose-500 p-2 font-bold text-white hover:bg-rose-600 disabled:bg-rose-200 disabled:text-black"
+                              onClick={handleSavePin}
+                              disabled={boardIsPending}
                             >
                               Save
                             </button>
@@ -530,40 +548,7 @@ export default function Pin() {
                 </div>
               </div>
 
-              <div
-                id="comments_container"
-                className="sticky bottom-0 z-[2] rounded-[0_0_2rem_0] border border-x-0 border-y-2 border-b-0 border-slate-300 bg-white p-5"
-              >
-                <form className="max-w-full px-1">
-                  <label htmlFor="comment" className="text-xl font-medium">
-                    What do you think?
-                  </label>
-                  <div className="mt-3 flex flex-row items-stretch rounded-[24px] p-2 outline outline-1 outline-slate-300 focus-within:outline-slate-500">
-                    <textarea
-                      id="comment"
-                      name="comment"
-                      className="h-auto w-full grow resize-none overflow-hidden whitespace-pre-wrap text-wrap break-words py-2 pr-2 outline-none"
-                      rows={1}
-                      minLength={3}
-                      maxLength={250}
-                      onInput={(e) => {
-                        const textarea = e.currentTarget;
-                        textarea.style.height = 'auto';
-                        textarea.style.height = `${textarea.scrollHeight}px`;
-                      }}
-                      placeholder="Add a Comment"
-                    ></textarea>
-                    <div className="inset-y-0 right-0 flex items-center">
-                      <button
-                        type="submit"
-                        className="mr-3 rounded-lg bg-rose-500 p-2 font-bold text-white "
-                      >
-                        Submit
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
+              <AddComments />
             </div>
           </>
         )}

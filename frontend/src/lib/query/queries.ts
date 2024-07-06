@@ -159,16 +159,12 @@ export const fetchBoardsByUsernameTitle = `
 
 // * Mutations
 export const savePinToBoard = `
-mutation SavePinToBoard($pinId: ID!, $boardId: ID!){
-  savePinToBoard(pinId: $pinID, boardId: $boardId) {
-    success
-    message
-    board {
-      id
-      title
+mutation SavePinToBoard($pinId: ID!, $boardId: ID!) {
+    savePinToBoard(pinId: $pinId, boardId: $boardId) {
+      success
+      message
     }
-  }
-}`;
+  }`;
 export const createPinMutationSchema = `
 mutation CreatePin($input: CreatePinInput!) {
   createPin(input: $input) {

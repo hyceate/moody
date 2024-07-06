@@ -195,6 +195,7 @@ export const EditPin = ({
             }}
           ></textarea>
         </FormControl>
+
         <FormControl id="link">
           <FormLabel>Link</FormLabel>
           <input
@@ -204,6 +205,7 @@ export const EditPin = ({
             className="w-full rounded-3xl p-4 outline outline-1 outline-slate-300"
           ></input>
         </FormControl>
+
         <FormControl id="board">
           <FormLabel>Board</FormLabel>
           <Popover isLazy isOpen={isPopOverOpen} onClose={onPopOverClose}>
@@ -230,19 +232,6 @@ export const EditPin = ({
                     </div>
                   )}
                   {data && data?.length < 1 && <div>No boards</div>}
-                  {data && (
-                    <button
-                      type="button"
-                      className="flex w-full flex-row flex-wrap items-center justify-center rounded-lg px-5 py-2 font-bold hover:bg-slate-200"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedBoard(null);
-                        onPopOverToggle();
-                      }}
-                    >
-                      Remove from board
-                    </button>
-                  )}
                   {data?.map(
                     (board: {
                       id: string;
