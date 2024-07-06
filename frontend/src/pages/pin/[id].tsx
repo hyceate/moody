@@ -17,6 +17,8 @@ import {
   DrawerContent,
   DrawerOverlay,
   useDisclosure,
+  Popover,
+  PopoverTrigger,
 } from '@chakra-ui/react';
 import { ExternalLinkIcon, EditIcon } from '@chakra-ui/icons';
 import { useAuth } from '@/context/authContext';
@@ -242,6 +244,14 @@ export default function Pin() {
                             )}
                         </MenuList>
                       </Menu>
+                      <form>
+                        <Popover>
+                          <PopoverTrigger>
+                            <button type="button"></button>
+                          </PopoverTrigger>
+                        </Popover>
+                        <button type="button">Save Pin</button>
+                      </form>
                     </div>
                   </div>
                 </div>
