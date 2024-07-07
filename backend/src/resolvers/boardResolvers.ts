@@ -62,12 +62,15 @@ export const boardResolvers = {
             path: 'pins',
             model: Pin,
             populate: [{ path: 'user', model: User }],
-            options: { sort: { createdAt: -1 } },
             perDocumentLimit: 3,
           })
           .populate({ path: 'user', model: User });
 
-        return boards;
+        const boardsWithReversedPins = boards.map((board) => {
+          board.pins.reverse();
+          return board;
+        });
+        return boardsWithReversedPins;
       } catch (error) {
         console.error('Error fetching boards:', error);
         throw new Error('Failed to fetch boards');
@@ -86,12 +89,15 @@ export const boardResolvers = {
           .populate({
             path: 'pins',
             model: Pin,
-            options: { sort: { createdAt: -1 } },
             populate: [{ path: 'user', model: User }],
           })
+          .sort({ ObjectId: -1 })
           .populate({ path: 'user', model: User });
-
-        return boards;
+        const boardsWithReversedPins = boards.map((board) => {
+          board.pins.reverse();
+          return board;
+        });
+        return boardsWithReversedPins;
       } catch (error) {
         console.error('Error fetching boards:', error);
         throw new Error('Failed to fetch boards');
@@ -106,34 +112,39 @@ export const boardResolvers = {
         const currentUser = context.req.session.user
           ? context.req.session.user.id
           : null;
-        const sortOrder = sort === 1 ? 1 : -1;
+        const sortOrder = sort === -1 ? -1 : 1;
         const boards = await Board.find({
           user: userId,
           $or: [{ isPrivate: false }, { isPrivate: true, user: currentUser }],
-        })
-          .populate({
-            path: 'pins',
-            model: Pin,
-            options: { sort: { createdAt: sortOrder } },
-            populate: {
-              path: 'user',
-              model: User,
-            },
-          })
-          .sort({ createdAt: sortOrder });
-        const uniquePinIds = new Set();
-        const uniquePins = [];
+        }).populate({
+          path: 'pins',
+          model: Pin,
+          options: { sort: { createdAt: sortOrder } },
+          populate: {
+            path: 'user',
+            model: User,
+          },
+        });
+
+        const uniquePinIds = new Set<string>();
+        const uniquePins: Array<any> = [];
 
         for (const board of boards) {
           for (const pin of board.pins) {
-            if (!uniquePinIds.has(pin.id)) {
-              uniquePinIds.add(pin.id);
+            const pinId = pin._id.toString();
+            if (!uniquePinIds.has(pinId)) {
+              uniquePinIds.add(pinId);
               uniquePins.push(pin);
             }
           }
         }
+        const sortedUniquePins = uniquePins.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return sortOrder === -1 ? dateB - dateA : dateA - dateB;
+        });
 
-        return uniquePins;
+        return sortedUniquePins;
       } catch (err) {
         return err;
       }

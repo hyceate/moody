@@ -35,7 +35,7 @@ const NavLink = styled(Link)`
   }
 `;
 const ActionNavs = styled(Link)`
-  display:block;
+  display: block;
   font-weight: 700;
   padding-inline: 1rem;
   padding-block: 0.5rem;
@@ -94,7 +94,7 @@ export const Header = () => {
 
   return (
     <>
-      <header className="top-0 z-10 flex h-auto w-full flex-row items-center gap-3 border-b-2 bg-white px-2 py-4 max-md:flex-wrap md:sticky">
+      <header className="top-0 z-10 flex h-auto w-full flex-row items-center gap-3  bg-white px-2 py-4 max-md:flex-wrap md:sticky">
         <aside id="logo" className="-mt-1 px-2">
           <h1 className="text-4xl font-black">
             <Link
