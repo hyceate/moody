@@ -1,3 +1,3 @@
-import { Comment } from '../models/comment.model';
+import { Comment } from '../models/db/comment.model';
 
 export const commentsResolvers = {};

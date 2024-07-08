@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import passport from 'passport';
-import { User } from '../models/user.model';
+import { User } from '../models/db/user.model';
 import { validateEmail, validateLength } from '../functions/validate';
 interface UserType {
   id: string;

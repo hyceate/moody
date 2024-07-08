@@ -53,14 +53,14 @@ export const GridComponentWithUser = ({
                 <div className="absolute right-0 z-10 m-1 flex flex-row gap-2 opacity-0 group-hover:opacity-100">
                   <button
                     type="button"
-                    className="flex aspect-square items-center rounded-full bg-slate-100 p-2 hover:bg-action hover:text-white"
+                    className="flex aspect-square items-center rounded-full bg-slate-100 p-2 hover:bg-action hover:text-white active:bg-action active:text-white"
                     onClick={drawerOnOpen}
                   >
                     <EditIcon />
                   </button>
                   <button
                     type="button"
-                    className="flex aspect-square items-center rounded-full bg-slate-100 p-2 hover:bg-action hover:text-white"
+                    className="flex aspect-square items-center rounded-full bg-slate-100 p-2 hover:bg-action hover:text-white active:bg-action active:text-white"
                     onClick={onModalOpen}
                   >
                     <CloseIcon />
@@ -85,7 +85,7 @@ export const GridComponentWithUser = ({
                 {data.title && (
                   <>
                     <Link to={`/pin/${data.id}`}>
-                      <h1 className="font-semibold hover:text-[#76abae]">
+                      <h1 className="font-semibold hover:text-[#76abae] active:text-[#76abae]">
                         {data.title}
                       </h1>
                     </Link>

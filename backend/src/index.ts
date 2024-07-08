@@ -18,14 +18,8 @@ import { createYoga } from 'graphql-yoga';
 // GraphQL
 import { schema } from './schema';
 // Models
-import { User } from './models/user.model';
-// Controllers
-import {
-  register,
-  login,
-  logout,
-  checkAuth,
-} from './controllers/auth.controllers';
+import { User } from './models/db/user.model';
+import routes from './routes';
 
 const startGraphQLYogaServer = async () => {
   const app = express() as Application;
@@ -94,29 +88,7 @@ const startGraphQLYogaServer = async () => {
     yoga,
   );
 
-  // app.use((req, res, next) => {
-  //   console.log('Session middleware check:', req.session);
-  //   next();
-  // });
-  // Routes
-  app.get('/', (req: Request, res: Response) => {
-    res.send('server running');
-    console.log('Session: ', req.session);
-  });
-
-  app.get('/users/:username', async (req: Request, res: Response) => {
-    try {
-      const username = req.params.username;
-      const user = await User.findOne({ username }, '-password -salt');
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.json({ message: 'User found', user });
-    } catch (error) {
-      console.error('Error querying user:', error);
-      res.status(500).json({ message: 'Error querying user' });
-    }
-  });
+  app.use('/', routes);
 
   interface CustomSessionData {
     user?: {
@@ -125,6 +97,7 @@ const startGraphQLYogaServer = async () => {
       username: string;
     };
   }
+
   app.post(
     '/api/auth/upload',
     async (req: Request & { session: CustomSessionData }, res: Response) => {
@@ -208,10 +181,26 @@ const startGraphQLYogaServer = async () => {
       });
     },
   );
-  app.get('/api/auth/user', checkAuth);
-  app.post('/api/auth/login', login);
-  app.post('/api/auth/register', register);
-  app.post('/api/auth/logout', logout);
+
+  // * for testing
+  // app.use((req, res, next) => {
+  //   console.log('Session middleware check:', req.session);
+  //   next();
+  // });
+  // Routes
+  app.get('/users/:username', async (req: Request, res: Response) => {
+    try {
+      const username = req.params.username;
+      const user = await User.findOne({ username }, '-password -salt');
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json({ message: 'User found', user });
+    } catch (error) {
+      console.error('Error querying user:', error);
+      res.status(500).json({ message: 'Error querying user' });
+    }
+  });
 
   try {
     await mongoose;

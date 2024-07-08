@@ -1,5 +1,5 @@
-import { Pin } from '../models/pin.model';
-import { Board } from '../models/board.model';
+import { Pin } from '../models/db/pin.model';
+import { Board } from '../models/db/board.model';
 import fs from 'fs';
 import path from 'path';
 

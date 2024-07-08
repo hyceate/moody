@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongoose';
-import { Board } from '../models/board.model';
-import { Pin } from '../models/pin.model';
-import { User } from '../models/user.model';
+import { Board } from '../models/db/board.model';
+import { Pin } from '../models/db/pin.model';
+import { User } from '../models/db/user.model';
 import slugify from 'slugify';
 import { deletePinById } from './shared';
 

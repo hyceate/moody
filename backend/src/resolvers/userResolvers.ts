@@ -1,6 +1,6 @@
-import { User } from '../models/user.model';
-import { Board } from '../models/board.model';
-import { Pin } from '../models/pin.model';
+import { User } from '../models/db/user.model';
+import { Board } from '../models/db/board.model';
+import { Pin } from '../models/db/pin.model';
 import bcrypt from 'bcryptjs';
 import { validateEmail, validateLength } from '../functions/validate';
 

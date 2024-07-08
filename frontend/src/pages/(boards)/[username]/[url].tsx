@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Box, Masonry } from 'gestalt';
 import { Link } from 'react-router-dom';
-import { endpoint, fetchData } from '@/query/fetch';
+import { client, endpoint, fetchData } from '@/query/fetch';
 import {
   deleteBoardSchema,
   fetchBoardsByUsernameTitle,
@@ -67,14 +67,6 @@ const useBoardData = (username: string, url: string) => {
   });
 };
 
-const createGraphQLClient = () => {
-  return new GraphQLClient(endpoint, {
-    credentials: 'include',
-  });
-};
-const client = createGraphQLClient();
-
-//component start
 export default function SingleBoard() {
   const drawerButtonRef = useRef<HTMLButtonElement>(null);
   const {

@@ -82,7 +82,6 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
       user: id,
     };
     if (input) await createBoard.mutateAsync(input);
-    // console.log('Form Values: ', input);
   };
 
   return (

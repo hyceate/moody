@@ -1,7 +1,7 @@
-import { Pin, PinType } from '../models/pin.model';
-import { User } from '../models/user.model';
-import { Board } from '../models/board.model';
-import { Comment } from '../models/comment.model';
+import { Pin, PinType } from '../models/db/pin.model';
+import { User } from '../models/db/user.model';
+import { Board } from '../models/db/board.model';
+import { Comment } from '../models/db/comment.model';
 import { deletePinById } from './shared';
 import path from 'path';
 import fs from 'fs';
