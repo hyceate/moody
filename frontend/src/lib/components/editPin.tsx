@@ -1,5 +1,6 @@
 import {
   Button,
+  Divider,
   FormControl,
   FormLabel,
   Modal,
@@ -16,12 +17,12 @@ import {
 } from '@chakra-ui/react';
 import { Board, Pin, User } from '@/@types/interfaces';
 import { AddIcon, ChevronDownIcon, LockIcon } from '@chakra-ui/icons';
-import { endpoint, fetchData } from '@/query/fetch';
+import { client, fetchData } from '@/query/fetch';
 import { fetchBoardsForForm, updatePinMutation } from '@/query/queries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FormEvent, useEffect, useState } from 'react';
 import { CreateBoard } from './createBoard';
-import { GraphQLClient } from 'graphql-request';
+import { DeleteFromBoard } from './deleteFromBoard';
 
 interface UpdatePin {
   user: string;
@@ -41,17 +42,27 @@ interface UpdateStatus {
 export const EditPin = ({
   user,
   pin,
+  board,
+  onClose,
 }: {
   user: User | null;
   pin: Pin | undefined;
+  board?: Board | null;
+  onClose?: () => void;
 }) => {
   const userId = user?.id;
   const [hasFetched, setHasFetched] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
+
   const {
     isOpen: isModalOpen,
     onClose: onModalClose,
     onOpen: onModalOpen,
+  } = useDisclosure();
+  const {
+    isOpen: isDeleteModalOpen,
+    onClose: onDeleteModalClose,
+    onOpen: onDeleteModalOpen,
   } = useDisclosure();
   const {
     isOpen: isPopOverOpen,
@@ -70,12 +81,6 @@ export const EditPin = ({
   });
 
   const queryClient = useQueryClient();
-  const createGraphQLClient = () => {
-    return new GraphQLClient(endpoint, {
-      credentials: 'include',
-    });
-  };
-  const client = createGraphQLClient();
   const updatePinMutate = useMutation({
     mutationFn: async (input: UpdatePin) => {
       const response: UpdateStatus = await client.request(updatePinMutation, {
@@ -97,17 +102,14 @@ export const EditPin = ({
       }
     },
   });
+
   useEffect(() => {
     if (isSuccess && data) {
-      if (pin?.boards && pin.boards.length > 0) {
-        const latestBoardId = pin.boards[0].board?.id;
-        const latestBoard = data.find((board) => board.id === latestBoardId);
-        setSelectedBoard(latestBoard || null);
-      } else {
-        setSelectedBoard(null);
-      }
+      const latestBoardId = pin?.boards?.[0]?.board?.id;
+      const latestBoard = data.find((board) => board.id === latestBoardId);
+      setSelectedBoard(latestBoard || null);
     }
-  }, [isSuccess, data, pin?.boards]);
+  }, [isSuccess, data, pin]);
 
   if (!pin || !user) {
     return null;
@@ -141,9 +143,9 @@ export const EditPin = ({
       currentBoard,
       newBoard,
     };
-    console.log('Input: ', input);
     try {
       await updatePinMutate.mutateAsync(input);
+      onClose?.();
     } catch (error) {
       return error;
     }
@@ -162,7 +164,7 @@ export const EditPin = ({
         <input
           type="hidden"
           name="currentBoard"
-          defaultValue={pin.boards[0]?.board.id ?? ''}
+          defaultValue={pin.boards[0]?.board?.id ?? ''}
         ></input>
         <input
           type="hidden"
@@ -206,97 +208,98 @@ export const EditPin = ({
           ></input>
         </FormControl>
 
-        <FormControl id="board">
-          <FormLabel>Board</FormLabel>
-          <Popover isLazy isOpen={isPopOverOpen} onClose={onPopOverClose}>
-            <PopoverTrigger>
-              <button
-                type="button"
-                onClick={handleBoardSelect}
-                className="flex w-full flex-row flex-wrap items-center justify-between rounded-lg px-5 outline outline-1 outline-slate-300"
-              >
-                <h1 id="selectedBoard">
-                  {selectedBoard ? selectedBoard.title : null}
-                </h1>
-                <span>
-                  <ChevronDownIcon boxSize="1.5rem" />
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent padding="0" margin="0" display="flex">
-              <PopoverBody padding="0" maxH="14rem" overflowY="scroll">
-                <div className="items center flex w-full flex-col justify-center gap-px p-2">
-                  {!data && (
-                    <div>
-                      <Spinner size="xl" />
-                    </div>
-                  )}
-                  {data && data?.length < 1 && <div>No boards</div>}
-                  {data?.map(
-                    (board: {
-                      id: string;
-                      title: string;
-                      pins: Pin[];
-                      isPrivate: boolean;
-                    }) => (
-                      <button
-                        type="button"
-                        className="flex w-full"
-                        key={board.id}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedBoard(board);
-                          onPopOverToggle();
-                        }}
-                      >
-                        <div className="flex w-full flex-row flex-wrap items-center gap-4 rounded-md p-2 hover:bg-slate-200">
-                          <div className="aspect-square w-12 overflow-hidden rounded-md">
-                            {board.pins.length > 0 && (
-                              <img
-                                src={board.pins[0].imgPath}
-                                alt={`Board ${board.title}`}
-                              />
+        {pin.boards && (
+          <FormControl id="board">
+            <FormLabel>Board</FormLabel>
+            <Popover isLazy isOpen={isPopOverOpen} onClose={onPopOverClose}>
+              <PopoverTrigger>
+                <button
+                  type="button"
+                  onClick={handleBoardSelect}
+                  className="flex w-full flex-row flex-wrap items-center justify-between rounded-lg px-5 outline outline-1 outline-slate-300"
+                >
+                  <h1 id="selectedBoard">
+                    {selectedBoard ? selectedBoard.title : null}
+                  </h1>
+                  <span>
+                    <ChevronDownIcon boxSize="1.5rem" />
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent padding="0" margin="0" display="flex">
+                <PopoverBody padding="0" maxH="14rem" overflowY="scroll">
+                  <div className="items center flex w-full flex-col justify-center gap-px p-2">
+                    {!data && (
+                      <div>
+                        <Spinner size="xl" />
+                      </div>
+                    )}
+                    {data && data?.length < 1 && <div>No boards</div>}
+                    {data?.map(
+                      (board: {
+                        id: string;
+                        title: string;
+                        pins: Pin[];
+                        isPrivate: boolean;
+                      }) => (
+                        <button
+                          type="button"
+                          className="flex w-full"
+                          key={board.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedBoard(board);
+                            onPopOverToggle();
+                          }}
+                        >
+                          <div className="flex w-full flex-row flex-wrap items-center gap-4 rounded-md p-2 hover:bg-slate-200">
+                            <div className="aspect-square w-12 overflow-hidden rounded-md">
+                              {board.pins.length > 0 && (
+                                <img
+                                  src={board.pins[0].imgPath}
+                                  alt={`Board ${board.title}`}
+                                />
+                              )}
+                            </div>
+                            <span className="flex w-full flex-1 items-start font-bold">
+                              {board.title}
+                            </span>
+                            {board.isPrivate && (
+                              <span className="">
+                                <LockIcon />
+                              </span>
                             )}
                           </div>
-                          <span className="flex w-full flex-1 items-start font-bold">
-                            {board.title}
-                          </span>
-                          {board.isPrivate && (
-                            <span className="">
-                              <LockIcon />
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    ),
-                  )}
-                </div>
-              </PopoverBody>
-              <PopoverFooter padding="0" height="100%" flexGrow="auto">
-                <div className="flex w-full justify-end">
-                  <Button
-                    type="button"
-                    paddingX="20px"
-                    paddingY="10px"
-                    width="100%"
-                    onClick={onModalOpen}
-                    display="flex"
-                    height="100%"
-                    justifyContent="start"
-                    gap="20px"
-                    bg="transparent"
-                  >
-                    <span className="rounded-full bg-action p-2 text-white">
-                      <AddIcon boxSize={6} />
-                    </span>
-                    <h1>Create a board</h1>
-                  </Button>
-                </div>
-              </PopoverFooter>
-            </PopoverContent>
-          </Popover>
-        </FormControl>
-
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </PopoverBody>
+                <PopoverFooter padding="0" height="100%" flexGrow="auto">
+                  <div className="flex w-full justify-end">
+                    <Button
+                      type="button"
+                      paddingX="20px"
+                      paddingY="10px"
+                      width="100%"
+                      onClick={onModalOpen}
+                      display="flex"
+                      height="100%"
+                      justifyContent="start"
+                      gap="20px"
+                      bg="transparent"
+                    >
+                      <span className="rounded-full bg-action p-2 text-white">
+                        <AddIcon boxSize={6} />
+                      </span>
+                      <h1>Create a board</h1>
+                    </Button>
+                  </div>
+                </PopoverFooter>
+              </PopoverContent>
+            </Popover>
+          </FormControl>
+        )}
         <Button
           type="submit"
           bg="actions.pink.50"
@@ -306,6 +309,39 @@ export const EditPin = ({
           Save
         </Button>
       </form>
+      {board && (
+        <>
+          <Divider />
+          <div className="flex items-center justify-center">
+            <button
+              className="my-8 flex items-center justify-center rounded-md font-bold hover:bg-slate-300"
+              type="button"
+              onClick={onDeleteModalOpen}
+            >
+              <span className="px-5 py-2">Delete Pin from board?</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={onDeleteModalClose}
+        size="xl"
+        isCentered
+      >
+        <ModalOverlay />
+        <ModalContent rounded="1rem" overflow="hidden">
+          <div className="size-full border p-5">
+            <DeleteFromBoard
+              pin={pin}
+              board={board!}
+              onClose={onDeleteModalClose}
+            />
+          </div>
+        </ModalContent>
+      </Modal>
+
       <Modal isOpen={isModalOpen} onClose={onModalClose} size="xl" isCentered>
         <ModalOverlay />
         <ModalContent rounded="1rem" overflow="hidden">

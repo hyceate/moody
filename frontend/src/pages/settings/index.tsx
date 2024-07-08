@@ -33,8 +33,7 @@ import {
   validatePassword,
   validateNewPassword,
 } from '@/actions/validations';
-import { endpoint } from '@/query/fetch';
-import { GraphQLClient } from 'graphql-request';
+import { client } from '@/query/fetch';
 import axios from 'axios';
 import { ProfileAvatar } from '@/components/avatar';
 
@@ -149,14 +148,9 @@ export default function Settings() {
       }
     }
   };
-  const createGraphQLClient = () => {
-    return new GraphQLClient(endpoint, {
-      credentials: 'include',
-    });
-  };
+
   const updateMutation = useMutation({
     mutationFn: async (input: FormValues) => {
-      const client = createGraphQLClient();
       const response: updateResponse = await client.request(updateProfile, {
         input,
       });

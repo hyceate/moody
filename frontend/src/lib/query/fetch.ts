@@ -6,7 +6,7 @@ const createGraphQLClient = () => {
     credentials: 'include',
   });
 };
-const client = createGraphQLClient();
+export const client = createGraphQLClient();
 export const fetchData = async <T>(
   query: string,
   variables: Record<string, any>,

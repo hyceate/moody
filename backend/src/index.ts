@@ -151,7 +151,7 @@ const startGraphQLYogaServer = async () => {
               req.file,
               userId,
             );
-            res.status(200).json(fileProcessingResult); // Respond with processed file information
+            res.status(200).json(fileProcessingResult);
           } catch (error) {
             console.error('Error processing file:', error);
             return res.status(500).json({ message: 'Error processing file' });

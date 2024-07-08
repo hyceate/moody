@@ -1,6 +1,6 @@
 import { ProfileAvatar } from '@/components/avatar';
 import { useQuery } from '@tanstack/react-query';
-import { fetchData, endpoint } from '@/query/fetch';
+import { fetchData } from '@/query/fetch';
 import { Link, Outlet, useParams } from 'react-router-dom';
 import { User } from '@/@types/interfaces';
 import { fetchUserData } from '@/query/queries';

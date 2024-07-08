@@ -1,5 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { Board } from './board.model';
+import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 interface User {

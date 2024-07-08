@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchData } from '@/query/fetch';
+import { client, fetchData } from '@/query/fetch';
 import {
   fetchBoardsForForm,
   fetchPinData,
@@ -39,7 +39,6 @@ import {
   AddIcon,
 } from '@chakra-ui/icons';
 import { useAuth } from '@/context/authContext';
-import { GraphQLClient } from 'graphql-request';
 import { ProfileAvatar } from '@/components/avatar';
 import { Board, Pin as PinDetails, Pin as Pins } from '@/@types/interfaces';
 import { EditPin } from '@/components/editPin';
@@ -58,6 +57,7 @@ interface SaveResponse {
     message: string;
   };
 }
+
 const deletePin = `
   mutation deletePin($id: ID!){
     deletePin(id: $id){
@@ -65,22 +65,10 @@ const deletePin = `
     message
     }
 }`;
-const endpoint = 'http://localhost:3000/api/graphql';
-const createGraphQLClient = () => {
-  return new GraphQLClient(endpoint, {
-    credentials: 'include',
-  });
-};
-const client = createGraphQLClient();
 
 export default function Pin() {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
-  const {
-    isOpen: drawerIsOpen,
-    onOpen: drawerOnOpen,
-    onClose: drawerOnClose,
-  } = useDisclosure();
   const [hasFetched, setHasFetched] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const {
@@ -92,6 +80,11 @@ export default function Pin() {
     isOpen: isPopOverOpen,
     onToggle: onPopOverToggle,
     onClose: onPopOverClose,
+  } = useDisclosure();
+  const {
+    isOpen: drawerIsOpen,
+    onOpen: drawerOnOpen,
+    onClose: drawerOnClose,
   } = useDisclosure();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -180,6 +173,7 @@ export default function Pin() {
       });
     },
   });
+
   const handleDelete = async () => {
     if (id) {
       await deletePinMutation.mutateAsync(id);
@@ -553,6 +547,7 @@ export default function Pin() {
           </>
         )}
       </section>
+
       <Modal isOpen={isModalOpen} onClose={onModalClose} size="xl" isCentered>
         <ModalOverlay />
         <ModalContent rounded="1rem" overflow="hidden">
@@ -570,7 +565,7 @@ export default function Pin() {
         <DrawerOverlay></DrawerOverlay>
         <DrawerContent>
           <DrawerBody>
-            <EditPin user={user} pin={pinData} />
+            <EditPin user={user} pin={pinData} onClose={drawerOnClose} />
           </DrawerBody>
         </DrawerContent>
       </Drawer>

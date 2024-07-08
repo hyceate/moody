@@ -245,6 +245,7 @@ export default function SingleBoard() {
                 data={data}
                 showPins={showPins}
                 showUser={true}
+                boardId={board.id}
               />
             )}
             scrollContainer={() => {
@@ -261,6 +262,7 @@ export default function SingleBoard() {
           </div>
         )}
       </Box>
+
       <Drawer
         isOpen={isDrawerOpen}
         placement="right"
@@ -358,6 +360,7 @@ export default function SingleBoard() {
           </DrawerBody>
         </DrawerContent>
       </Drawer>
+
       <Modal isOpen={isModalOpen} onClose={onModalClose} isCentered>
         <ModalOverlay />
         <ModalContent>
@@ -379,7 +382,7 @@ export default function SingleBoard() {
                   >
                     Yes
                   </Button>
-                  <Button>No</Button>
+                  <Button onClick={onModalClose}>No</Button>
                 </div>
               </ModalFooter>
             </section>

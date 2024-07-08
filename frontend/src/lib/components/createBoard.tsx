@@ -7,9 +7,8 @@ import {
   Switch,
   useToast,
 } from '@chakra-ui/react';
-import { endpoint } from '@/query/fetch';
+import { client } from '@/query/fetch';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { GraphQLClient } from 'graphql-request';
 import { createBoardGql } from '@/query/queries';
 import { Board } from '@/@types/interfaces';
 
@@ -26,18 +25,12 @@ interface CreateBoardResponse {
     board: Board;
   };
 }
+
 export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
   const { user } = useAuth();
   const toast = useToast();
   const id = user ? user.id : undefined;
-
   const queryClient = useQueryClient();
-  const createGraphQLClient = () => {
-    return new GraphQLClient(endpoint, {
-      credentials: 'include',
-    });
-  };
-  const client = createGraphQLClient();
   const createBoard = useMutation({
     mutationFn: async (input: CreateBoardInput) => {
       const response: CreateBoardResponse = await client.request(

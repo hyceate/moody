@@ -1,5 +1,6 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import slugify from 'slugify';
+
 interface Board {
   title: string;
   description?: string;
@@ -10,6 +11,7 @@ interface Board {
   pinCount: number;
   isPrivate: boolean;
 }
+
 const boardSchema: Schema<Board> = new Schema(
   {
     user: {
@@ -66,4 +68,5 @@ boardSchema.virtual('pinCount').get(function (this: { pins: any[] }): number {
 });
 boardSchema.index({ user: 1 });
 boardSchema.index({ title: 1 });
+
 export const Board = mongoose.model('board', boardSchema);

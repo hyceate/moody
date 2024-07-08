@@ -60,26 +60,17 @@ const pinTypeDefs = gql`
     message: String!
     pin: Pin
   }
-  type DeletePinResponse {
-    success: Boolean!
-    message: String!
-  }
-  type CreateCommentResponse {
-    success: Boolean!
-    message: String!
-    comment: Comment
-  }
-  type SavePinToBoardResponse {
+  type StatusResponse {
     success: Boolean!
     message: String!
   }
   type Mutation {
     createPin(input: CreatePinInput!): CreatePinResponse!
     updatePin(input: UpdatePinInput!): CreatePinResponse!
-    deletePin(id: ID!): DeletePinResponse!
-    deletePinFromBoard(id: ID!): DeletePinResponse!
-    savePinToBoard(pinId: ID!, boardId: ID!): SavePinToBoardResponse!
-    createComment(input: CreateCommentInput!): CreateCommentResponse!
+    deletePin(id: ID!): StatusResponse!
+    deletePinFromBoard(pinId: ID!, boardId: ID!): StatusResponse!
+    savePinToBoard(pinId: ID!, boardId: ID!): StatusResponse!
+    createComment(input: CreateCommentInput!): StatusResponse!
   }
 
   input CreatePinInput {

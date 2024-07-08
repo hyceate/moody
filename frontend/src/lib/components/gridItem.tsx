@@ -4,21 +4,70 @@ import { handleSaveScrollPos } from '@/actions/scroll';
 import { Pin as Pins } from '@/@types/interfaces';
 import './css/gestalt.css';
 import { ProfileAvatar } from './avatar';
+import { useAuth } from '@/context/authContext';
+import { CloseIcon, EditIcon } from '@chakra-ui/icons';
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerOverlay,
+  Modal,
+  ModalContent,
+  ModalOverlay,
+  useDisclosure,
+} from '@chakra-ui/react';
+import { EditPin } from './editPin';
+import { DeleteFromBoard } from './deleteFromBoard';
+
+// *
 export const GridComponentWithUser = ({
   data,
   showPins,
-  showUser
+  showUser,
+  boardId,
 }: {
   data: Pins;
   showPins: boolean;
-  showUser:boolean;
+  showUser: boolean;
+  boardId?: string | null;
 }) => {
+  const { isAuthenticated, user } = useAuth();
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure();
+  const {
+    isOpen: drawerIsOpen,
+    onOpen: drawerOnOpen,
+    onClose: drawerOnClose,
+  } = useDisclosure();
+
   return (
     <div className={`fadeIn ${showPins ? 'loaded' : ''} will-change-transform`}>
-      <Box rounding={8} marginBottom={3} >
+      <Box rounding={8} marginBottom={3}>
         <Flex direction="column">
           <Flex.Item>
-            <div>
+            <div id="pinImageContainer" className="group relative">
+              {isAuthenticated && boardId && (
+                <div className="absolute right-0 z-10 m-1 flex flex-row gap-2 opacity-0 group-hover:opacity-100">
+                  <button
+                    type="button"
+                    className="flex aspect-square items-center rounded-full bg-slate-100 p-2 hover:bg-action hover:text-white"
+                    onClick={drawerOnOpen}
+                  >
+                    <EditIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex aspect-square items-center rounded-full bg-slate-100 p-2 hover:bg-action hover:text-white"
+                    onClick={onModalOpen}
+                  >
+                    <CloseIcon />
+                  </button>
+                </div>
+              )}
+
               <Link to={`/pin/${data.id}`} onClick={handleSaveScrollPos}>
                 {data && (
                   <Box rounding={5} overflow="hidden">
@@ -42,20 +91,61 @@ export const GridComponentWithUser = ({
                     </Link>
                   </>
                 )}
-                {showUser && (<Link
-                  to={`/profile/${data.user.username}`}
-                  className="flex flex-row items-center gap-2 hover:underline"
-                >
-                  <div className="aspect-square w-8">
-                    <ProfileAvatar size="2rem" src={data.user.avatarUrl} />
-                  </div>
-                  <h2 className="text-[0.8rem]">{data.user.username}</h2>
-                </Link>) }
+                {showUser && (
+                  <Link
+                    to={`/profile/${data.user.username}`}
+                    className="flex flex-row items-center gap-2 hover:underline"
+                  >
+                    <div className="aspect-square w-8">
+                      <ProfileAvatar size="2rem" src={data.user.avatarUrl} />
+                    </div>
+                    <h2 className="text-[0.8rem]">{data.user.username}</h2>
+                  </Link>
+                )}
               </section>
             </div>
           </Flex.Item>
         </Flex>
       </Box>
+      {boardId && (
+        <>
+          <Modal
+            isOpen={isModalOpen}
+            onClose={onModalClose}
+            size="xl"
+            isCentered
+          >
+            <ModalOverlay />
+            <ModalContent rounded="1rem" overflow="hidden">
+              <div className="size-full border p-5">
+                <DeleteFromBoard
+                  pin={data}
+                  board={data?.boards[0]?.board}
+                  onClose={onModalClose}
+                />
+              </div>
+            </ModalContent>
+          </Modal>
+          <Drawer
+            isOpen={drawerIsOpen}
+            onClose={drawerOnClose}
+            placement="right"
+            size="sm"
+          >
+            <DrawerOverlay></DrawerOverlay>
+            <DrawerContent>
+              <DrawerBody>
+                <EditPin
+                  user={user}
+                  pin={data}
+                  board={data?.boards[0]?.board}
+                  onClose={drawerOnClose}
+                />
+              </DrawerBody>
+            </DrawerContent>
+          </Drawer>
+        </>
+      )}
     </div>
   );
 };

@@ -255,10 +255,6 @@ export const pinResolvers = {
             }
           } else {
             return { success: false, message: 'Unable to add to new board' };
-            // // If no new board, just remove the pin from the current board
-            // pin.boards = pin.boards!.filter(
-            //   (b) => b.board._id.toString() !== currentBoardId,
-            // );
           }
         };
 
@@ -328,6 +324,44 @@ export const pinResolvers = {
       return deletePinById(id);
     },
 
+    deletePinFromBoard: async (
+      _: any,
+      { pinId, boardId }: { pinId: string; boardId: string },
+      context: any,
+    ) => {
+      const currentUser = context.req.session.user
+        ? context.req.session.user.id
+        : null;
+      if (!currentUser) {
+        return { success: false, message: 'You are not logged in.' };
+      }
+      try {
+        const pin = await Pin.findById(pinId);
+        const board = await Board.findById(boardId);
+        if (!board || !pin)
+          return { success: false, message: 'Board not found' };
+        if (
+          board.user.toString() !== currentUser ||
+          pin.user.toString() !== currentUser
+        ) {
+          return {
+            success: false,
+            message: 'You are not authorized to edit board or pin',
+          };
+        }
+        pin.boards = pin.boards!.filter((b) => b.board.toString() !== boardId);
+        await pin.save();
+        await Board.findByIdAndUpdate(
+          boardId,
+          { $pull: { pins: pin._id } },
+          { new: true, useFindAndModify: false },
+        );
+        return { success: true, message: 'Pin removed from board' };
+      } catch (error) {
+        return { success: false, message: error };
+      }
+    },
+
     createComment: async (
       _: any,
       {
@@ -342,9 +376,11 @@ export const pinResolvers = {
         commentTime: new Date(),
       });
       await newComment.save();
-      await Pin.findByIdAndUpdate(pinId, {
-        $push: { comments: newComment._id },
-      });
+      await Pin.findByIdAndUpdate(
+        pinId,
+        { $push: { comments: newComment._id } },
+        { new: true, useFindAndModify: false },
+      );
       return {
         success: true,
         message: 'Comment saved',

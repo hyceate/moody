@@ -1,7 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPinsSchema } from '@/query/queries';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, Masonry } from 'gestalt';
 import { GridComponentWithUser } from '@/components/gridItem';
 import { restoreScroll } from '@/actions/scroll';
@@ -92,7 +92,11 @@ const AllPins = () => {
             virtualize={true}
             minCols={2}
             renderItem={({ data }) => (
-              <GridComponentWithUser data={data} showPins={showPins} showUser={true} />
+              <GridComponentWithUser
+                data={data}
+                showPins={showPins}
+                showUser={true}
+              />
             )}
             scrollContainer={() => {
               if (scrollContainerRef.current instanceof HTMLDivElement) {

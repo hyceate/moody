@@ -1,4 +1,4 @@
-import { ObjectId, SortOrder } from 'mongoose';
+import { ObjectId } from 'mongoose';
 import { Board } from '../models/board.model';
 import { Pin } from '../models/pin.model';
 import { User } from '../models/user.model';
@@ -40,11 +40,18 @@ interface BoardInput {
   isPrivate: boolean;
 }
 
+const reversePinsInBoards = (boards: any) => {
+  return boards.map((board: any) => {
+    board.pins.reverse();
+    return board;
+  });
+};
+
 export const boardResolvers = {
   Query: {
     boardsByUser: async (
       _: any,
-      { userId }: { userId: ObjectId },
+      { userId }: { userId: string },
       context: any,
     ) => {
       try {
@@ -63,22 +70,21 @@ export const boardResolvers = {
             model: Pin,
             populate: [{ path: 'user', model: User }],
             perDocumentLimit: 3,
+            options: { lean: true },
           })
           .populate({ path: 'user', model: User });
 
-        const boardsWithReversedPins = boards.map((board) => {
-          board.pins.reverse();
-          return board;
-        });
+        const boardsWithReversedPins = reversePinsInBoards(boards);
         return boardsWithReversedPins;
       } catch (error) {
         console.error('Error fetching boards:', error);
         throw new Error('Failed to fetch boards');
       }
     },
+
     boardsByUsernameTitle: async (
       _: any,
-      { username, url }: { username: string; url?: string },
+      { username, url }: { username: string; url: string },
     ) => {
       try {
         const user = await User.findOne({ username });
@@ -89,20 +95,36 @@ export const boardResolvers = {
           .populate({
             path: 'pins',
             model: Pin,
-            populate: [{ path: 'user', model: User }],
+            populate: [
+              { path: 'user', model: User },
+              {
+                path: 'boards',
+                perDocumentLimit: 1,
+                populate: [
+                  {
+                    path: 'board',
+                    model: Board,
+                    select: 'user id title description url isPrivate pins',
+                    populate: {
+                      path: 'user',
+                      model: User,
+                      select: 'id username',
+                    },
+                  },
+                ],
+              },
+            ],
           })
-          .sort({ ObjectId: -1 })
           .populate({ path: 'user', model: User });
-        const boardsWithReversedPins = boards.map((board) => {
-          board.pins.reverse();
-          return board;
-        });
+
+        const boardsWithReversedPins = reversePinsInBoards(boards);
         return boardsWithReversedPins;
       } catch (error) {
         console.error('Error fetching boards:', error);
         throw new Error('Failed to fetch boards');
       }
     },
+
     pinsByUserBoards: async (
       _: any,
       { userId, sort }: { userId: string; sort: number },
@@ -119,11 +141,25 @@ export const boardResolvers = {
         }).populate({
           path: 'pins',
           model: Pin,
-          options: { sort: { createdAt: sortOrder } },
-          populate: {
-            path: 'user',
-            model: User,
-          },
+          populate: [
+            { path: 'user', model: User },
+            {
+              path: 'boards',
+              perDocumentLimit: 1,
+              populate: [
+                {
+                  path: 'board',
+                  model: Board,
+                  select: 'user id title description url isPrivate pins',
+                  populate: {
+                    path: 'user',
+                    model: User,
+                    select: 'id username',
+                  },
+                },
+              ],
+            },
+          ],
         });
 
         const uniquePinIds = new Set<string>();
@@ -150,6 +186,7 @@ export const boardResolvers = {
       }
     },
   },
+
   Mutation: {
     createBoard: async (_: any, { input }: { input: BoardInput }) => {
       try {

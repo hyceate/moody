@@ -89,7 +89,19 @@ query PinsByUserBoards($userId: ID!, $sort: Int = -1){
       username
       avatarUrl
     }
-  }}`;
+    boards {
+      savedAt
+      board {
+        id
+        title
+        user {
+          id
+          username
+        }
+      }
+    }
+  }
+}`;
 
 export const fetchUserBoards = `
   query GetBoardsByUser($user_Id: ID!) {
@@ -151,6 +163,17 @@ export const fetchBoardsByUsernameTitle = `
           username
           avatarUrl
         }
+        boards {
+          savedAt
+          board {
+            id
+            title
+            user {
+              id
+              username
+            }
+          }
+        }
       }
       pinCount
     }
@@ -165,6 +188,13 @@ mutation SavePinToBoard($pinId: ID!, $boardId: ID!) {
       message
     }
   }`;
+export const deletePinFromBoard = `
+mutation DeletePinFromBoard($pinId: ID!, $boardId: ID!) {
+    deletePinFromBoard(pinId: $pinId, boardId: $boardId) {
+      success
+      message
+    }
+}`;
 export const createPinMutationSchema = `
 mutation CreatePin($input: CreatePinInput!) {
   createPin(input: $input) {

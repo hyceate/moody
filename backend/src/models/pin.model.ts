@@ -1,9 +1,10 @@
-import mongoose, { ObjectId, Schema, Types } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 
 interface BoardReference {
   board: Types.ObjectId;
   savedAt: Date;
 }
+
 export interface PinType {
   _id: Types.ObjectId;
   title: string;
