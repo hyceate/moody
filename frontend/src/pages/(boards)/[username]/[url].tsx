@@ -60,7 +60,7 @@ const useBoardData = (username: string, url: string) => {
         fetchBoardsByUsernameTitle,
         {
           username,
-          url: url,
+          url,
         },
       ).then((data) => data.boardsByUsernameTitle),
     enabled: !!username && !!url,
@@ -91,6 +91,7 @@ export default function SingleBoard() {
   );
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
   const DeleteBoard = useMutation({
     mutationFn: async (boardId: string) => {
       const response: deleteResponse = await client.request(deleteBoardSchema, {
@@ -110,6 +111,7 @@ export default function SingleBoard() {
       }
     },
   });
+
   const UpdateBoard = useMutation({
     mutationFn: async (input: UpdateBoardInput) => {
       const response = await client.request(updateBoardGql, { input: input });
@@ -117,17 +119,26 @@ export default function SingleBoard() {
     },
     onSuccess: (data: any) => {
       const upDated = data.updateBoard;
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
       if (upDated.success === true) {
+        queryClient.invalidateQueries({ queryKey: ['pinDetails'] });
+        queryClient.invalidateQueries({ queryKey: ['boards'] });
         toast({
           status: 'success',
           title: 'Board Updated',
           isClosable: true,
           duration: 3000,
         });
+      } else {
+        toast({
+          status: 'success',
+          title: upDated.message,
+          isClosable: true,
+          duration: 3000,
+        });
       }
     },
   });
+
   useEffect(() => {
     if (boardData && boardData.length > 0 && !showPins) {
       setPins(boardData[0].pins);
@@ -237,7 +248,7 @@ export default function SingleBoard() {
                 data={data}
                 showPins={showPins}
                 showUser={true}
-                boardId={board.id}
+                board={board}
               />
             )}
             scrollContainer={() => {

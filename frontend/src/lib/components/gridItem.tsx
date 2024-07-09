@@ -1,7 +1,7 @@
 import { Box, Flex, Image as Img } from 'gestalt';
 import { Link } from 'react-router-dom';
 import { handleSaveScrollPos } from '@/actions/scroll';
-import { Pin as Pins } from '@/@types/interfaces';
+import { Board, Pin as Pins } from '@/@types/interfaces';
 import './css/gestalt.css';
 import { ProfileAvatar } from './avatar';
 import { useAuth } from '@/context/authContext';
@@ -24,12 +24,12 @@ export const GridComponentWithUser = ({
   data,
   showPins,
   showUser,
-  boardId,
+  board,
 }: {
   data: Pins;
   showPins: boolean;
   showUser: boolean;
-  boardId?: string | null;
+  board?: Board | null;
 }) => {
   const { isAuthenticated, user } = useAuth();
   const {
@@ -49,7 +49,7 @@ export const GridComponentWithUser = ({
         <Flex direction="column">
           <Flex.Item>
             <div id="pinImageContainer" className="group relative">
-              {isAuthenticated && boardId && (
+              {isAuthenticated && board && (
                 <div className="absolute right-0 z-10 m-1 flex flex-row gap-2 opacity-0 group-hover:opacity-100">
                   <button
                     type="button"
@@ -107,7 +107,7 @@ export const GridComponentWithUser = ({
           </Flex.Item>
         </Flex>
       </Box>
-      {boardId && (
+      {board && (
         <>
           <Modal
             isOpen={isModalOpen}
@@ -120,7 +120,7 @@ export const GridComponentWithUser = ({
               <div className="size-full border p-5">
                 <DeleteFromBoard
                   pin={data}
-                  board={data?.boards[0]?.board}
+                  board={board}
                   onClose={onModalClose}
                 />
               </div>

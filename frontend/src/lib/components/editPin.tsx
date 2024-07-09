@@ -91,7 +91,7 @@ export const EditPin = ({
     onSuccess: (data) => {
       const updateStatus = data.updatePin;
       queryClient.invalidateQueries({ queryKey: ['pinDetails'] });
-      queryClient.invalidateQueries({ queryKey: ['boards', userId] });
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
       if (updateStatus.success === true) {
         toast({
           status: 'success',
