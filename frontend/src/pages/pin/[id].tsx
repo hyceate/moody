@@ -184,8 +184,8 @@ export default function Pin() {
     onPopOverToggle();
     if (!hasFetched) {
       setHasFetched(true);
+      refetch();
     }
-    refetch();
   };
 
   useEffect(() => {
