@@ -71,7 +71,6 @@ const pinTypeDefs = gql`
     deletePin(id: ID!): StatusResponse!
     deletePinFromBoard(pinId: ID!, boardId: ID!): StatusResponse!
     savePinToBoard(pinId: ID!, boardId: ID!): StatusResponse!
-    createComment(input: CreateCommentInput!): StatusResponse!
   }
 
   input CreatePinInput {
@@ -94,11 +93,6 @@ const pinTypeDefs = gql`
     description: String
     currentBoard: String
     newBoard: String
-  }
-  input CreateCommentInput {
-    user: ID!
-    comment: String!
-    pin: ID!
   }
 `;
 

@@ -31,9 +31,18 @@ export const AddComments = ({ pin }: { pin: Pin }) => {
       });
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments'] });
-      console.log(data);
+      toast({
+        status: 'success',
+        title: 'comment added',
+      });
+      const commentTextarea = document.getElementById(
+        'comment',
+      ) as HTMLTextAreaElement;
+      if (commentTextarea) {
+        commentTextarea.value = '';
+      }
     },
   });
 

@@ -7,6 +7,10 @@ type CommentInput = {
   pinId: string;
   comment: string;
 };
+type DeleteCommentInput = {
+  pinId: string;
+  commentId: string;
+};
 export const commentResolvers = {
   Query: {
     getAllComments: async (_: any, { pinId }: { pinId: string }) => {
@@ -15,14 +19,27 @@ export const commentResolvers = {
         if (!pin) {
           return { success: false, message: 'Unable to find pin' };
         }
-        const allComments = await Comment.find({ pin: pinId })
+        const comments = await Pin.findById(pinId)
+          .select('comments')
           .populate({
-            path: 'user',
-            model: User,
-            select: 'id username avatarUrl',
-          })
-          .sort({ createdAt: -1 })
-          .select('comment createdAt ');
+            path: 'comments',
+            populate: {
+              path: 'user',
+              model: User,
+              select: 'id username avatarUrl',
+            },
+            options: { sort: { createdAt: -1 } },
+          });
+        if (!comments) return;
+        const allComments = comments.comments;
+        // const allComments = await Comment.find({ pin: pinId })
+        //   .populate({
+        //     path: 'user',
+        //     model: User,
+        //     select: 'id username avatarUrl',
+        //   })
+        //   .sort({ createdAt: -1 })
+        //   .select('comment createdAt ');
 
         return allComments;
       } catch (error) {
@@ -83,6 +100,65 @@ export const commentResolvers = {
         return { success: true, message: 'added comment' };
       } catch (error) {
         return { success: false, message: error };
+      }
+    },
+    updateComment: async (
+      _: any,
+      { input }: { input: CommentInput },
+      context: any,
+    ) => {
+      const currentUser = context.req.session.user
+        ? context.req.session.user.id
+        : null;
+    },
+    deleteComment: async (
+      _: any,
+      {
+        input,
+      }: {
+        input: DeleteCommentInput;
+      },
+      context: any,
+    ) => {
+      const currentUser = context.req.session.user
+        ? context.req.session.user.id
+        : null;
+
+      const { pinId, commentId } = input;
+      try {
+        if (!currentUser) return { success: false, message: 'not logged in' };
+        const pin = await Pin.findById(pinId);
+        if (!pin) return { success: false, message: 'unable to find pin' };
+
+        const comment = await Comment.findById(commentId);
+        if (!comment)
+          return { success: false, message: 'unable to find comment' };
+
+        if (
+          comment.user._id.toString() !== currentUser ||
+          pin.user._id.toString() !== currentUser
+        ) {
+          return {
+            success: false,
+            message: `you don't own the comment or unauthorized to remove comment from pin`,
+          };
+        }
+        await Pin.findByIdAndUpdate(
+          pinId,
+          { $pull: { comments: comment._id } },
+          { new: true, useFindAndModify: false },
+        );
+
+        const deleted = await Comment.findByIdAndDelete(commentId);
+        if (!deleted)
+          return {
+            success: false,
+            message: `error in deletion: comment not deleted`,
+          };
+
+        return { success: true, message: `Comment has been deleted` };
+      } catch (error) {
+        return { success: false, message: `error in deletion: ${error}` };
       }
     },
   },

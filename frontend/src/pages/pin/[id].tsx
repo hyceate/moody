@@ -6,7 +6,7 @@ import {
   savePinToBoard,
 } from '@/query/queries';
 import { FormEvent, Suspense, useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import '@/components/css/transitions.css';
 import {
   Button,
@@ -72,6 +72,7 @@ export default function Pin() {
   const { isAuthenticated, user } = useAuth();
   const [hasFetched, setHasFetched] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
+  const navigate = useNavigate();
   const {
     isOpen: isModalOpen,
     onClose: onModalClose,
@@ -107,7 +108,7 @@ export default function Pin() {
   const {
     data: pinData,
     isLoading: pinIsLoading,
-    error,
+    isError: pinIsError,
   } = useQuery<PinDetails>({
     queryKey: ['pinDetails', id],
     queryFn: () =>
@@ -115,6 +116,7 @@ export default function Pin() {
         (data) => data.pin,
       ),
   });
+
   const savePin = useMutation({
     mutationFn: async ({
       pinId,
@@ -174,12 +176,12 @@ export default function Pin() {
       });
     },
   });
-
   const handleDelete = async () => {
     if (id) {
       await deletePinMutation.mutateAsync(id);
     }
   };
+
   const handleBoardSelect = () => {
     onPopOverToggle();
     if (!hasFetched) {
@@ -278,7 +280,10 @@ export default function Pin() {
       </div>
     );
 
-  if (error) return <div>Error: {error.message}</div>;
+  if (pinIsError) {
+    navigate('/');
+    toast({ status: 'error', title: 'unable to find pin' });
+  }
 
   return (
     <div className="relative flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5">
@@ -491,7 +496,7 @@ export default function Pin() {
 
                 <div
                   id="pin_contents"
-                  className="flex h-full flex-col overflow-auto"
+                  className="flex h-full max-h-[30.25rem] flex-col overflow-y-auto"
                 >
                   <div className="mt-4 flex flex-auto flex-col gap-8 pr-8">
                     {pinData?.link && (
@@ -536,7 +541,7 @@ export default function Pin() {
                     <div id="commentsContainer" className="">
                       <h1 className="text-xl font-medium">Comments</h1>
                       <Suspense fallback={<Spinner />}>
-                        <Comments pinId={pinData.id} />
+                        <Comments pin={pinData} />
                       </Suspense>
                     </div>
                   </div>

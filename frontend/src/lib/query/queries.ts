@@ -174,7 +174,7 @@ export const fetchBoardsByUsernameTitle = `
 
 export const fetchComments = `
 query getAllComments($pinId: ID!){
-  getAllComments(pinId: $pinId){
+  getAllComments(pinId: $pinId) {
     id
     comment
     createdAt
@@ -275,6 +275,14 @@ mutation($boardId: ID!){
 export const addCommentGql = `
 mutation($input: CommentInput!){
   addComment(input: $input){
+    success
+    message
+  }
+}
+`;
+export const removeCommentGql = `
+mutation($input: DeleteCommentInput!){
+  deleteComment(input: $input){
     success
     message
   }

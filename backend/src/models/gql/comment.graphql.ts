@@ -14,9 +14,14 @@ const commentTypeDefs = gql`
   }
 
   input CommentInput {
-    user: ID
-    pinId: String
-    comment: String
+    user: ID!
+    pinId: String!
+    comment: String!
+  }
+
+  input DeleteCommentInput {
+    pinId: String!
+    commentId: String!
   }
 
   type StatusResponse {
@@ -26,7 +31,8 @@ const commentTypeDefs = gql`
 
   type Mutation {
     addComment(input: CommentInput!): StatusResponse!
-    removeComment(pinId: ID!, commentId: ID!): StatusResponse!
+    updateComment(input: CommentInput!): StatusResponse!
+    deleteComment(input: DeleteCommentInput): StatusResponse!
   }
 `;
 

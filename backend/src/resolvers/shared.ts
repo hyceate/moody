@@ -1,5 +1,6 @@
 import { Pin } from '../models/db/pin.model';
 import { Board } from '../models/db/board.model';
+import { Comment } from '../models/db/comment.model';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,6 +11,12 @@ export const deletePinById = async (pinId: string) => {
       throw new Error('Pin not found');
     }
     await Board.updateMany({ pins: pinId }, { $pull: { pins: pinId } });
+    const commentsToDelete = await Comment.find({ pin: pinId });
+    await Promise.all(
+      commentsToDelete.map(async (comment) => {
+        await Comment.findByIdAndDelete(comment._id);
+      }),
+    );
     await Pin.findByIdAndDelete(pinId);
 
     const imagePath = path.join(

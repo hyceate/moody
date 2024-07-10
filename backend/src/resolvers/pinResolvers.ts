@@ -361,30 +361,5 @@ export const pinResolvers = {
         return { success: false, message: error };
       }
     },
-
-    createComment: async (
-      _: any,
-      {
-        userId,
-        pinId,
-        commentText,
-      }: { userId: string; pinId: string; commentText: string },
-    ) => {
-      const newComment = new Comment({
-        user: userId,
-        comment: commentText,
-        commentTime: new Date(),
-      });
-      await newComment.save();
-      await Pin.findByIdAndUpdate(
-        pinId,
-        { $push: { comments: newComment._id } },
-        { new: true, useFindAndModify: false },
-      );
-      return {
-        success: true,
-        message: 'Comment saved',
-      };
-    },
   },
 };
