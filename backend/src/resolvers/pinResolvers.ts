@@ -49,10 +49,10 @@ export const pinResolvers = {
       { userid }: { userid: string },
       context: any,
     ) => {
+      const currentUser = context.req.session.user
+        ? context.req.session.user.id
+        : null;
       try {
-        const currentUser = context.req.session.user
-          ? context.req.session.user.id
-          : null;
         const pinsByUser = await Pin.find({
           user: userid,
           $or: [{ isPrivate: false }, { isPrivate: true, user: currentUser }],

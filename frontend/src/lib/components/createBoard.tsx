@@ -30,6 +30,7 @@ export const CreateBoard = ({ onClose }: { onClose: () => void }) => {
   const { user } = useAuth();
   const toast = useToast();
   const id = user ? user.id : undefined;
+
   const queryClient = useQueryClient();
   const createBoard = useMutation({
     mutationFn: async (input: CreateBoardInput) => {

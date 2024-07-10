@@ -1,9 +1,75 @@
 import { useAuth } from '@/context/authContext';
 import { ProfileAvatar } from './avatar';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { FormEvent } from 'react';
+import { Pin } from '@/@types/interfaces';
+import { client } from '@/query/fetch';
+import { addCommentGql } from '@/query/queries';
+import { Button, useToast } from '@chakra-ui/react';
 
-export const AddComments = () => {
+type CommentInput = {
+  user: string;
+  pinId: string;
+  comment: string;
+};
+interface AppendResponse {
+  addComment: {
+    success: boolean;
+    message: string;
+  };
+}
+
+export const AddComments = ({ pin }: { pin: Pin }) => {
   const { isAuthenticated, user } = useAuth();
+  const toast = useToast();
+
+  const queryClient = useQueryClient();
+  const addComment = useMutation({
+    mutationFn: async (input: CommentInput) => {
+      const response: AppendResponse = await client.request(addCommentGql, {
+        input,
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+      console.log(data);
+    },
+  });
+
+  async function handleAddComment(e: FormEvent) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form as HTMLFormElement);
+    const pinId = pin.id;
+    const commentText = formData.get('comment') as string;
+
+    if (!user) {
+      toast({
+        status: 'error',
+        title: 'User is not authenticated',
+      });
+      return;
+    }
+
+    const input = {
+      pinId,
+      user: user.id,
+      comment: commentText,
+    };
+
+    if (!input.comment) {
+      toast({
+        status: 'error',
+        title: 'comment cannot be empty',
+      });
+      return;
+    }
+    await addComment.mutateAsync(input);
+  }
+
   if (!isAuthenticated) return null;
+
   return (
     <>
       {isAuthenticated && user && (
@@ -11,7 +77,11 @@ export const AddComments = () => {
           id="add_comments"
           className="sticky bottom-0 z-[2] rounded-[0_0_2rem_0] border border-x-0 border-y-2 border-b-0 border-slate-300 bg-white p-5"
         >
-          <form className="max-w-full px-1">
+          <form
+            id="commentForm"
+            className="max-w-full px-1"
+            onSubmit={handleAddComment}
+          >
             <label htmlFor="comment" className="text-xl font-medium">
               What do you think?
             </label>
@@ -35,12 +105,15 @@ export const AddComments = () => {
                   placeholder="Add a Comment"
                 ></textarea>
                 <div className="inset-y-0 right-0 flex items-center">
-                  <button
+                  <Button
+                    isLoading={addComment.isPending}
                     type="submit"
-                    className="mr-3 rounded-lg bg-rose-500 p-2 font-bold text-white "
+                    bg="actions.pink.50"
+                    color="white"
+                    _hover={{ background: 'actions.pink.100' }}
                   >
                     Submit
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

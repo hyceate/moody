@@ -4,6 +4,7 @@ export interface User {
   email: string;
   avatarUrl: string;
 }
+
 export interface Pin {
   id: string;
   title: string;
@@ -32,4 +33,12 @@ export interface Board {
   isPrivate: boolean;
   pins: Pin[];
   pinCount?: number;
+}
+
+export interface Comment {
+  user: User;
+  id: string;
+  comment: string;
+  createdAt: string;
+  pin: Pin;
 }

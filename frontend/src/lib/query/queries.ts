@@ -41,14 +41,6 @@ query getPin($id: ID!) {
     imgPath
     imgWidth
     imgHeight
-    comments{
-      user{
-        id
-        username
-      }
-      comment
-      commentTime
-    }
   }
 }
 `;
@@ -180,6 +172,20 @@ export const fetchBoardsByUsernameTitle = `
   }
 `;
 
+export const fetchComments = `
+query getAllComments($pinId: ID!){
+  getAllComments(pinId: $pinId){
+    id
+    comment
+    createdAt
+    user {
+      id
+      username
+      avatarUrl
+    }
+  }
+}`;
+
 // * Mutations
 export const savePinToBoard = `
 mutation SavePinToBoard($pinId: ID!, $boardId: ID!) {
@@ -265,3 +271,12 @@ mutation($boardId: ID!){
     message
   }
 }`;
+
+export const addCommentGql = `
+mutation($input: CommentInput!){
+  addComment(input: $input){
+    success
+    message
+  }
+}
+`;

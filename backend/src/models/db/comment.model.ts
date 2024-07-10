@@ -1,27 +1,27 @@
 import mongoose, { Schema, Types } from 'mongoose';
 
-interface Comment {
+export interface CommentType {
   user: Types.ObjectId;
   comment: string;
-  commentTime: Date;
+  pin: Types.ObjectId;
 }
 
-const commentSchema: Schema<Comment> = new Schema(
+const commentSchema: Schema<CommentType> = new Schema(
   {
     user: {
       type: Schema.Types.ObjectId,
       ref: 'user',
       required: true,
     },
+    pin: {
+      type: Schema.Types.ObjectId,
+      ref: 'pin',
+      required: true,
+    },
     comment: {
       type: String,
       required: true,
       trim: true,
-    },
-    commentTime: {
-      type: Date,
-      required: true,
-      default: Date.now,
     },
   },
   { timestamps: true },

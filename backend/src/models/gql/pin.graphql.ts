@@ -49,6 +49,7 @@ const pinTypeDefs = gql`
     ASC
     DESC
   }
+
   type Query {
     pins(sort: PinsSortInput): [Pin!]!
     pinsByUser(userid: ID!, sort: Int): [Pin!]

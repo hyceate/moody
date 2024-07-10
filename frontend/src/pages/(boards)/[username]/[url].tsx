@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Box, Masonry } from 'gestalt';
 import { Link } from 'react-router-dom';
-import { client, endpoint, fetchData } from '@/query/fetch';
+import { client, fetchData } from '@/query/fetch';
 import {
   deleteBoardSchema,
   fetchBoardsByUsernameTitle,
@@ -35,7 +35,6 @@ import {
   useDisclosure,
   useToast,
 } from '@chakra-ui/react';
-import { GraphQLClient } from 'graphql-request';
 import { EditIcon } from '@chakra-ui/icons';
 
 interface UpdateBoardInput {
@@ -177,6 +176,7 @@ export default function SingleBoard() {
       const id = formData.get('boardId') as string;
       const title = formData.get('title') as string;
       const description = formData.get('description') as string;
+
       const input = {
         user,
         id,

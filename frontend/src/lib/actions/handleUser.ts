@@ -18,7 +18,7 @@ export const handleLogIn = async (
     .then((response: AxiosResponse) => {
       if (response.status === 200) {
         setSubmitting(false);
-        window.location.href = '/';
+        window.location.reload();
       } else if (response.status === 401) {
         setFieldError('email', 'username is already used');
         setSubmitting(false);

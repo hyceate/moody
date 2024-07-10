@@ -5,7 +5,7 @@ import {
   fetchPinData,
   savePinToBoard,
 } from '@/query/queries';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import '@/components/css/transitions.css';
 import {
@@ -44,6 +44,7 @@ import { Board, Pin as PinDetails, Pin as Pins } from '@/@types/interfaces';
 import { EditPin } from '@/components/editPin';
 import { CreateBoard } from '@/components/createBoard';
 import { AddComments } from '@/components/addComments';
+import { Comments } from '@/components/comments';
 
 interface DeleteResponse {
   deletePin: {
@@ -532,17 +533,17 @@ export default function Pin() {
                         <h1 className="text-xl">{pinData.user.username}</h1>
                       </Link>
                     </div>
-                    <div className="">
+                    <div id="commentsContainer" className="">
                       <h1 className="text-xl font-medium">Comments</h1>
-                      {pinData.comments.length < 1 && (
-                        <div className="my-5">No Comments yet!</div>
-                      )}
+                      <Suspense fallback={<Spinner />}>
+                        <Comments pinId={pinData.id} />
+                      </Suspense>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <AddComments />
+              <AddComments pin={pinData} />
             </div>
           </>
         )}
