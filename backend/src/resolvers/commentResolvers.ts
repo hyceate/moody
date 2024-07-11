@@ -6,6 +6,7 @@ type CommentInput = {
   user: string;
   pinId: string;
   comment: string;
+  commentId: string;
 };
 type DeleteCommentInput = {
   pinId: string;
@@ -110,6 +111,31 @@ export const commentResolvers = {
       const currentUser = context.req.session.user
         ? context.req.session.user.id
         : null;
+      const { commentId, user, comment } = input;
+      if (currentUser !== user)
+        return {
+          success: false,
+          message: 'you are not authorized to edit the comment',
+        };
+      try {
+        const commentToUpdate = await Comment.findById(commentId);
+        if (!commentToUpdate)
+          return { success: false, message: 'unable to find comment' };
+
+        if (user !== commentToUpdate.user._id.toString()) {
+          return {
+            success: false,
+            message: 'you are not authorized to edit this comment',
+          };
+        }
+        commentToUpdate.comment = comment;
+        await commentToUpdate.save();
+        if (commentToUpdate) {
+          return { success: true, message: 'comment saved' };
+        }
+      } catch (error) {
+        return { success: false, message: error };
+      }
     },
     deleteComment: async (
       _: any,

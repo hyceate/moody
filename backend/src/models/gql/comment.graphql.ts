@@ -15,7 +15,8 @@ const commentTypeDefs = gql`
 
   input CommentInput {
     user: ID!
-    pinId: String!
+    pinId: String
+    commentId: String
     comment: String!
   }
 

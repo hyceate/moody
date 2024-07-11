@@ -280,6 +280,14 @@ mutation($input: CommentInput!){
   }
 }
 `;
+export const editCommentGql = `
+mutation($input: CommentInput!){
+  updateComment(input: $input){
+    success
+    message
+  }
+}
+`;
 export const removeCommentGql = `
 mutation($input: DeleteCommentInput!){
   deleteComment(input: $input){

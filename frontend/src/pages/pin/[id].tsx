@@ -6,7 +6,7 @@ import {
   savePinToBoard,
 } from '@/query/queries';
 import { FormEvent, Suspense, useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import '@/components/css/transitions.css';
 import {
   Button,

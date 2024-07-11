@@ -1,10 +1,15 @@
 import { Comment, Pin } from '@/@types/interfaces';
 import { client, fetchData } from '@/query/fetch';
-import { fetchComments, removeCommentGql } from '@/query/queries';
+import {
+  editCommentGql,
+  fetchComments,
+  removeCommentGql,
+} from '@/query/queries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ProfileAvatar } from './avatar';
 import { Link } from 'react-router-dom';
 import {
+  Button,
   Menu,
   MenuButton,
   MenuItem,
@@ -18,8 +23,19 @@ interface RemoveComment {
   pinId: string;
   commentId: string;
 }
+interface UpdateComment {
+  user: string;
+  commentId: string;
+  comment: string;
+}
 interface RemoveResponse {
   deleteComment: {
+    success: boolean;
+    message: string;
+  };
+}
+interface UpdateResponse {
+  updateComment: {
     success: boolean;
     message: string;
   };
@@ -83,19 +99,31 @@ export const Comments = ({ pin }: { pin: Pin }) => {
 
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [updatedCommentText, setUpdatedCommentText] = useState<string>('');
+
+  const editComment = useMutation({
+    mutationFn: async (input: UpdateComment) => {
+      const response: UpdateResponse = await client.request(editCommentGql, {
+        input,
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+      setEditingComment(null);
+    },
+  });
   const handleEditComment = (commentId: string, currentText: string) => {
     setEditingComment(commentId);
     setUpdatedCommentText(currentText);
   };
   const handleUpdateComment = async (commentId: string) => {
-    if (!updatedCommentText || !commentId) return;
-
     const input = {
+      user: user!.id,
       commentId,
-      updatedComment: updatedCommentText,
+      comment: updatedCommentText,
     };
-
-    // await updateComment.mutateAsync(input);
+    console.log(input);
+    await editComment.mutateAsync(input);
   };
   const handleCancelEdit = () => {
     setEditingComment(null);
@@ -111,6 +139,7 @@ export const Comments = ({ pin }: { pin: Pin }) => {
             {editingComment === comment.id ? (
               <textarea
                 value={updatedCommentText}
+                maxLength={350}
                 onChange={(e) => setUpdatedCommentText(e.target.value)}
                 className="w-full resize-none rounded-md border border-gray-300 p-2 focus:outline-none"
               />
@@ -142,7 +171,7 @@ export const Comments = ({ pin }: { pin: Pin }) => {
               </>
             )}
           </div>
-          <div className="flex flex-row items-center gap-2">
+          <div className="mt-1 flex flex-row items-center gap-2">
             <span className="text-sm">{formatDate(comment.createdAt)}</span>
             {isAuthenticated && user && (
               <Menu>
@@ -150,30 +179,54 @@ export const Comments = ({ pin }: { pin: Pin }) => {
                   <>
                     {editingComment === comment.id ? (
                       <>
-                        <button onClick={() => handleUpdateComment(comment.id)}>
+                        <button
+                          type="button"
+                          className="rounded-md bg-action px-2 font-bold text-white hover:bg-rose-700"
+                          onClick={() => handleUpdateComment(comment.id)}
+                        >
                           Save Changes
                         </button>
-                        <button onClick={handleCancelEdit}>Cancel</button>
+                        <button
+                          type="button"
+                          className="rounded-md bg-slate-200 px-2 font-bold hover:bg-slate-300"
+                          onClick={handleCancelEdit}
+                        >
+                          Cancel
+                        </button>
                       </>
                     ) : (
                       <>
                         <MenuButton
+                          as={Button}
+                          background="transparent"
                           _hover={{ background: 'gray.200' }}
                           rounded="100%"
+                          display="flex"
+                          flexDir="column"
+                          justifyContent="center"
+                          alignItems="center"
+                          aspectRatio="1/1"
+                          margin="0"
+                          padding="0"
+                          paddingTop="7px"
+                          minH="10px"
+                          minW="10px"
+                          width="25px"
+                          height="25px"
+                          lineHeight="0"
                         >
-                          <button className="flex aspect-square flex-col items-center justify-center rounded-full px-2 pb-3 text-xl font-bold">
-                            ...
-                          </button>
+                          ...
                         </MenuButton>
                         <MenuList zIndex="90">
-                          <MenuItem
-                            onClick={() =>
-                              handleEditComment(comment.id, comment.comment)
-                            }
-                          >
-                            Edit Comment
-                          </MenuItem>
-
+                          {isAuthenticated && user.id === comment.user.id && (
+                            <MenuItem
+                              onClick={() =>
+                                handleEditComment(comment.id, comment.comment)
+                              }
+                            >
+                              Edit Comment
+                            </MenuItem>
+                          )}
                           <MenuItem
                             onClick={() => handleRemoveComment(comment.id)}
                           >
