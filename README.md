@@ -38,3 +38,5 @@ Create .env file in the backend folder.
 This is what you will use to connect to 'moody' db.
 
 ---
+
+searchbar is currently for cosmetics.
