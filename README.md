@@ -8,6 +8,9 @@ Built with MERN stack - pnpm - create app with vite + swc, Graphql-Yoga, graphql
 
 ---
 
+![screenshot of frontpage](imgs/1.jpg)
+![screenshot of upload page](imgs/2.jpg)
+
 Docker handles the mongodb and mongo express.
 You'll have to create an initial database, a database user to handle the database, and a initial collection.
 Start up docker and do `docker-compose up -d` in the folder with docker-compose.yml.
